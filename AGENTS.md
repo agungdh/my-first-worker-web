@@ -96,7 +96,7 @@ Rules:
 - Auth is a cookie, not a bearer token: every request needs `withCredentials: true` (the interceptor adds it). There is **no `/me`** endpoint; `SessionStore` only caches the identity from login for rendering, and a 401 clears it and redirects to `/login`.
 - All data endpoints are admin-only. Non-admin accounts can log in but are routed to `/akses-ditolak`.
 - Request/response payloads are snake_case (`bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan`), while TypeScript models keep the API names because they mirror the wire format.
-- Create/update return only `{ success: true }`, so reload the list after saving. Updates are full `PUT`: send every field, with `null` for empty nullable fields.
+- Create/update/delete return only `{ success: true }` (no entity), so reload the list after saving. Updates are full `PUT`: send every field, with `null` for empty nullable fields.
 - On create, an empty password means "use the NIP". On update, an empty password means "keep the current one" — omit the key instead of sending an empty string.
 - Request bodies are strict: never add extra keys. Normalize empty text to `null` (`buildPegawaiInput` in the pegawai dialog does this).
 - Errors use `{ success: false, errors: [{ code, message, path? }] }`; show them with `apiErrorMessage()` from `src/app/core/http/api-error.ts`.
