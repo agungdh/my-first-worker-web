@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { apiErrorMessages } from '../../core/http/api-error';
 import type { ValidationSample } from '../../core/models/api.models';
 import { ValidationService } from '../../core/services/validation.service';
+import { validationSampleSchema } from '../../core/validation/form-schemas';
 
 interface RuleGroup {
   field: string;
@@ -41,7 +42,7 @@ export class ValidationPage {
     password: '',
   });
 
-  readonly form = form(this.model);
+  readonly form = form(this.model, validationSampleSchema);
 
   readonly showPassword = signal(false);
   readonly submitting = signal(false);
@@ -85,11 +86,19 @@ export class ValidationPage {
 
     if (this.submitting()) return;
 
+    const formState = this.form();
+    if (formState.invalid()) {
+      formState.markAsTouched();
+      this.errors.set([]);
+      this.result.set(null);
+      return;
+    }
+
     this.submitting.set(true);
     this.errors.set([]);
     this.result.set(null);
 
-    this.validationService.validate(this.form().value()).subscribe({
+    this.validationService.validate(formState.value()).subscribe({
       next: (data) => {
         this.submitting.set(false);
         this.result.set(data);

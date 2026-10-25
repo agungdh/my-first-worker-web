@@ -10,17 +10,10 @@ import { apiErrorMessage } from '../../../core/http/api-error';
 import type { CreateTaskInput, Task } from '../../../core/models/api.models';
 import { TaskService } from '../../../core/services/task.service';
 import { todayIso } from '../../../core/util/date';
+import { taskFormSchema, type TaskFormModel } from '../../../core/validation/form-schemas';
 
 export interface TaskFormDialogData {
   task?: Task;
-}
-
-interface TaskFormModel {
-  name: string;
-  slug: string;
-  description: string;
-  due_date: string;
-  completed: boolean;
 }
 
 @Component({
@@ -54,14 +47,20 @@ export class TaskFormDialog {
     completed: this.data.task?.completed ?? false,
   });
 
-  readonly form = form(this.model);
+  readonly form = form(this.model, taskFormSchema);
 
   save(event: Event): void {
     event.preventDefault();
 
     if (this.saving()) return;
 
-    const value = this.form().value();
+    const formState = this.form();
+    if (formState.invalid()) {
+      formState.markAsTouched();
+      return;
+    }
+
+    const value = formState.value();
     const name = value.name.trim();
     const slug = value.slug.trim().toLowerCase();
     const description = value.description.trim();

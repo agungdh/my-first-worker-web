@@ -23,6 +23,9 @@
         <mat-label>Username</mat-label>
         <mat-icon matPrefix>person</mat-icon>
         <input matInput [formField]="form.username" autocomplete="username" placeholder="admin" />
+        @for (error of form.username().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -43,6 +46,9 @@
         >
           <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
+        @for (error of form.password().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <button mat-flat-button type="submit" class="submit-button" [disabled]="submitting()">

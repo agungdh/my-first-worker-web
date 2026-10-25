@@ -12,12 +12,18 @@
     <mat-form-field appearance="outline">
       <mat-label>Name</mat-label>
       <input matInput [formField]="form.name" placeholder="Ship the quarterly report" />
+      @for (error of form.name().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Slug</mat-label>
       <input matInput [formField]="form.slug" placeholder="ship-quarterly-report" />
       <mat-hint>Lowercase letters, numbers and hyphens</mat-hint>
+      @for (error of form.slug().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -34,6 +40,9 @@
       <mat-form-field appearance="outline">
         <mat-label>Due date</mat-label>
         <input matInput type="date" [formField]="form.due_date" />
+        @for (error of form.due_date().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <mat-checkbox [formField]="form.completed">Completed</mat-checkbox>

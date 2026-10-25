@@ -23,6 +23,9 @@
         <mat-label>Full name</mat-label>
         <mat-icon matPrefix>badge</mat-icon>
         <input matInput [formField]="form.name" autocomplete="name" placeholder="Ada Lovelace" />
+        @for (error of form.name().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -35,6 +38,9 @@
           placeholder="ada.lovelace"
         />
         <mat-hint>Letters, numbers, dots, underscores and hyphens</mat-hint>
+        @for (error of form.username().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -56,6 +62,9 @@
           <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
         <mat-hint>At least 8 characters</mat-hint>
+        @for (error of form.password().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
       </mat-form-field>
 
       <button mat-flat-button type="submit" class="submit-button" [disabled]="submitting()">

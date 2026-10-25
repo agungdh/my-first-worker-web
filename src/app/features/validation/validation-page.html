@@ -50,12 +50,18 @@
             <mat-label>Name</mat-label>
             <mat-icon matPrefix>badge</mat-icon>
             <input matInput [formField]="form.name" placeholder="Ada1" />
+            @for (error of form.name().errors(); track error.kind) {
+              <mat-error>{{ error.message }}</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Email</mat-label>
             <mat-icon matPrefix>alternate_email</mat-icon>
             <input matInput [formField]="form.email" placeholder="ada@example.com" />
+            @for (error of form.email().errors(); track error.kind) {
+              <mat-error>{{ error.message }}</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -75,6 +81,9 @@
             >
               <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
+            @for (error of form.password().errors(); track error.kind) {
+              <mat-error>{{ error.message }}</mat-error>
+            }
           </mat-form-field>
 
           <button mat-flat-button type="submit" class="submit-button" [disabled]="submitting()">

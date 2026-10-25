@@ -59,6 +59,21 @@ describe('LoginPage', () => {
     });
   });
 
+  it('blocks submission and shows inline errors when credentials are empty', async () => {
+    const fixture = TestBed.createComponent(LoginPage);
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Username is required.');
+    expect(fixture.nativeElement.textContent).toContain('Password is required.');
+  });
+
   it('shows the backend error when sign in fails', async () => {
     auth.login.mockImplementation(() =>
       throwError(

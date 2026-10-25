@@ -8,12 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../../core/http/api-error';
+import type { LoginInput } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
-
-interface LoginModel {
-  username: string;
-  password: string;
-}
+import { loginSchema } from '../../../core/validation/form-schemas';
 
 @Component({
   selector: 'app-login-page',
@@ -33,9 +30,9 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly model = signal<LoginModel>({ username: '', password: '' });
+  private readonly model = signal<LoginInput>({ username: '', password: '' });
 
-  readonly form = form(this.model);
+  readonly form = form(this.model, loginSchema);
 
   readonly showPassword = signal(false);
   readonly submitting = signal(false);
@@ -50,10 +47,16 @@ export class LoginPage {
 
     if (this.submitting()) return;
 
+    const formState = this.form();
+    if (formState.invalid()) {
+      formState.markAsTouched();
+      return;
+    }
+
     this.submitting.set(true);
     this.errorMessage.set(null);
 
-    this.auth.login(this.form().value()).subscribe({
+    this.auth.login(formState.value()).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/dashboard';

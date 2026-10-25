@@ -8,13 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../../core/http/api-error';
+import type { RegisterInput } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
-
-interface RegisterModel {
-  username: string;
-  name: string;
-  password: string;
-}
+import { registerSchema } from '../../../core/validation/form-schemas';
 
 @Component({
   selector: 'app-register-page',
@@ -33,13 +29,13 @@ export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  private readonly model = signal<RegisterModel>({
+  private readonly model = signal<RegisterInput>({
     username: '',
     name: '',
     password: '',
   });
 
-  readonly form = form(this.model);
+  readonly form = form(this.model, registerSchema);
 
   readonly showPassword = signal(false);
   readonly submitting = signal(false);
@@ -54,10 +50,16 @@ export class RegisterPage {
 
     if (this.submitting()) return;
 
+    const formState = this.form();
+    if (formState.invalid()) {
+      formState.markAsTouched();
+      return;
+    }
+
     this.submitting.set(true);
     this.errorMessage.set(null);
 
-    this.auth.register(this.form().value()).subscribe({
+    this.auth.register(formState.value()).subscribe({
       next: () => void this.router.navigateByUrl('/dashboard'),
       error: (error: unknown) => {
         this.submitting.set(false);
