@@ -7,24 +7,49 @@ import type {
   BidangInput,
   BidangListResponse,
   BidangResponse,
+  Page,
+  SortOrder,
   SuccessResponse,
 } from '../models/api.models';
 import { collectPages } from '../util/pagination';
+
+export type BidangSort = 'id' | 'bidang';
+
+export interface BidangQuery {
+  cursor?: number;
+  cursorValue?: string | null;
+  sort: BidangSort;
+  order: SortOrder;
+}
 
 @Service()
 export class BidangService {
   private readonly http = inject(HttpClient);
 
-  listPage(page: number): Observable<Bidang[]> {
-    const params = new HttpParams().set('page', page.toString());
+  listPage(query: BidangQuery): Observable<Page<Bidang>> {
+    let params = new HttpParams().set('sort', query.sort).set('order', query.order);
+    if (query.cursor !== undefined) params = params.set('cursor', query.cursor.toString());
+    if (query.cursorValue != null) params = params.set('cursor_value', query.cursorValue);
 
-    return this.http
-      .get<BidangListResponse>(`${environment.apiBaseUrl}/bidang`, { params })
-      .pipe(map((response) => response.bidang ?? []));
+    return this.http.get<BidangListResponse>(`${environment.apiBaseUrl}/bidang`, { params }).pipe(
+      map((response) => ({
+        items: response.bidang ?? [],
+        nextCursor: response.next_cursor,
+        nextCursorValue: response.next_cursor_value,
+        hasMore: response.has_more,
+      })),
+    );
   }
 
   listAll(): Observable<Bidang[]> {
-    return collectPages((page) => this.listPage(page));
+    return collectPages((cursor) =>
+      this.listPage({
+        cursor: cursor?.id,
+        cursorValue: cursor?.value,
+        sort: 'bidang',
+        order: 'asc',
+      }),
+    );
   }
 
   get(id: number): Observable<Bidang> {

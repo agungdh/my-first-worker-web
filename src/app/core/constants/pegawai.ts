@@ -33,8 +33,7 @@ export const KATEGORI_KEBUTUHAN_JAM_PELATIHAN_OPTIONS: readonly EnumOption<Kateg
     { value: 'auditor', label: 'Auditor' },
   ];
 
-/** Backend page size (`src/shared/config.ts`); list responses carry no total. */
-export const PAGE_SIZE = 20;
+/** Search and filter limits mirrored from the backend Zod schemas. */
 export const SEARCH_MIN_LENGTH = 3;
 export const NIP_PATTERN = /^\d{8,20}$/;
 

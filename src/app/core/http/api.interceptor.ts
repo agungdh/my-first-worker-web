@@ -13,9 +13,14 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       const isAuthRequest = request.url.startsWith(`${environment.apiBaseUrl}/auth/`);
 
-      if (error instanceof HttpErrorResponse && error.status === 401 && !isAuthRequest) {
-        session.clear();
-        void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
+      if (error instanceof HttpErrorResponse && !isAuthRequest) {
+        if (error.status === 401) {
+          session.clear();
+          void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
+        } else if (error.status === 403) {
+          // The cached role can be stale; the backend is the source of truth.
+          void router.navigate(['/akses-ditolak']);
+        }
       }
 
       return throwError(() => error);

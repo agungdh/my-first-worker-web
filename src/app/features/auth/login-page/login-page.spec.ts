@@ -3,18 +3,25 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import type { ApiUser } from '../../../core/models/api.models';
+import type { Pegawai } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginPage } from './login-page';
 
 @Component({ template: '' })
 class BlankPage {}
 
-const adminUser: ApiUser = {
+const adminUser: Pegawai = {
   id: 1,
   nip: '198001012000011001',
   nama: 'Administrator',
   role: 'admin',
+  status: 'aktif',
+  jabatan: null,
+  peran: null,
+  kategori_jabatan: null,
+  kategori_kebutuhan_jam_pelatihan: null,
+  bidang: { id: 1, bidang: 'Sekretariat' },
+  pangkat_golongan: null,
 };
 
 describe('LoginPage', () => {

@@ -18,9 +18,9 @@ Open `http://localhost:4200`. The API base URL lives in `src/environments/enviro
 
 ## Features
 
-- **Auth**: NIP + password, HttpOnly cookie session, no public registration. Non-admin accounts land on an "Akses ditolak" page.
-- **Pegawai**: server-side search (min 3 characters) and filters (role, status, bidang, pangkat/golongan, kategori jabatan, kebutuhan jam pelatihan), prev/next pagination, create/edit dialog, soft delete with confirmation.
-- **Bidang** and **Pangkat & Golongan**: master-data CRUD with pagination.
+- **Auth**: NIP + password, HttpOnly cookie session, no public registration. Login returns the full pegawai (with bidang and pangkat/golongan), cached in localStorage so the shell renders without another fetch. Non-admin accounts land on an "Akses ditolak" page.
+- **Pegawai**: server-side search (min 3 characters) and filters (role, status, bidang, pangkat/golongan, kategori jabatan, kebutuhan jam pelatihan), cursor pagination with infinite scroll, sortable `nama`/`nip` columns, create/edit dialog, soft delete with confirmation.
+- **Bidang** and **Pangkat & Golongan**: master-data CRUD with cursor pagination, infinite scroll, and sortable columns.
 - **Dashboard**: intentionally empty placeholder for now.
 
 ## Scripts

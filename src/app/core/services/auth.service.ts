@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { catchError, map, type Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { ApiUser, AuthResponse, LoginInput } from '../models/api.models';
+import type { AuthResponse, LoginInput, Pegawai } from '../models/api.models';
 import { SessionStore } from '../session/session-store';
 
 @Service()
@@ -14,7 +14,8 @@ export class AuthService {
   readonly isAuthenticated = this.session.isAuthenticated;
   readonly isAdmin = this.session.isAdmin;
 
-  login(input: LoginInput): Observable<ApiUser> {
+  /** Login returns the full pegawai; it is cached so no `/me` exists. */
+  login(input: LoginInput): Observable<Pegawai> {
     return this.http.post<AuthResponse>(`${environment.apiBaseUrl}/auth/login`, input).pipe(
       map((response) => response.user),
       tap((user) => this.session.set(user)),

@@ -6,14 +6,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { catchError, debounceTime, distinctUntilChanged, forkJoin, of, Subject } from 'rxjs';
 import {
   KATEGORI_JABATAN_OPTIONS,
   KATEGORI_KEBUTUHAN_JAM_PELATIHAN_OPTIONS,
-  PAGE_SIZE,
   ROLE_OPTIONS,
   SEARCH_MIN_LENGTH,
   STATUS_OPTIONS,
@@ -29,16 +30,23 @@ import type {
   PangkatGolongan,
   Pegawai,
   Role,
+  SortOrder,
   Status,
 } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
 import { BidangService } from '../../../core/services/bidang.service';
 import { PangkatGolonganService } from '../../../core/services/pangkat-golongan.service';
-import { PegawaiService, type PegawaiQuery } from '../../../core/services/pegawai.service';
+import {
+  PegawaiService,
+  type PegawaiQuery,
+  type PegawaiSort,
+} from '../../../core/services/pegawai.service';
+import type { Cursor } from '../../../core/util/pagination';
 import {
   ConfirmDialog,
   type ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog';
+import { InfiniteScrollDirective } from '../../../shared/infinite-scroll/infinite-scroll';
 import {
   PegawaiFormDialog,
   type PegawaiFormDialogData,
@@ -52,12 +60,15 @@ const dialogConfig: MatDialogConfig = {
 @Component({
   selector: 'app-pegawai-page',
   imports: [
+    InfiniteScrollDirective,
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
+    MatSortModule,
     MatTableModule,
   ],
   templateUrl: './pegawai-page.html',
@@ -80,12 +91,23 @@ export class PegawaiPage {
 
   readonly rows = signal<Pegawai[]>([]);
   readonly loading = signal(true);
+  readonly loadingMore = signal(false);
   readonly loadError = signal<string | null>(null);
+  readonly loadMoreError = signal<string | null>(null);
+  readonly nextCursor = signal<Cursor | null>(null);
+  readonly hasMore = computed(() => this.nextCursor() !== null);
+  readonly canLoadMore = computed(
+    () => this.hasMore() && !this.loading() && !this.loadingMore() && this.loadMoreError() === null,
+  );
+
+  readonly sort = signal<{ active: PegawaiSort; direction: SortOrder }>({
+    active: 'nama',
+    direction: 'asc',
+  });
 
   readonly bidangOptions = signal<Bidang[]>([]);
   readonly pangkatOptions = signal<PangkatGolongan[]>([]);
 
-  readonly page = signal(0);
   readonly search = signal('');
   readonly roleFilter = signal<Role | ''>('');
   readonly statusFilter = signal<Status | ''>('');
@@ -96,7 +118,6 @@ export class PegawaiPage {
 
   readonly columns = ['nama', 'nip', 'bidang', 'pangkat', 'jabatan', 'role', 'status', 'actions'];
 
-  readonly hasNext = computed(() => this.rows().length === PAGE_SIZE);
   readonly searchTooShort = computed(() => {
     const term = this.search().trim();
     return term.length > 0 && term.length < SEARCH_MIN_LENGTH;
@@ -112,44 +133,37 @@ export class PegawaiPage {
         if (value === this.search()) return;
 
         this.search.set(value);
-        this.reloadFromFirstPage();
+        this.reload();
       });
 
     this.loadLookups();
-    this.load();
+    this.reload();
   }
 
-  load(): void {
+  reload(): void {
+    this.nextCursor.set(null);
+    this.rows.set([]);
+    this.loadMoreError.set(null);
+
     if (this.searchTooShort()) {
       this.requestId += 1;
-      this.rows.set([]);
       this.loading.set(false);
       this.loadError.set(null);
       return;
     }
 
-    const requestId = ++this.requestId;
-    this.loading.set(true);
-    this.loadError.set(null);
+    this.fetchPage(true);
+  }
 
-    this.pegawaiService
-      .listPage(this.query())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (rows) => {
-          if (requestId !== this.requestId) return;
+  loadMore(): void {
+    if (!this.canLoadMore()) return;
 
-          this.rows.set(rows);
-          this.loading.set(false);
-        },
-        error: (error: unknown) => {
-          if (requestId !== this.requestId) return;
+    this.fetchPage(false);
+  }
 
-          this.rows.set([]);
-          this.loadError.set(apiErrorMessage(error, 'Gagal memuat data pegawai.'));
-          this.loading.set(false);
-        },
-      });
+  retryLoadMore(): void {
+    this.loadMoreError.set(null);
+    this.loadMore();
   }
 
   onSearch(event: Event): void {
@@ -159,37 +173,44 @@ export class PegawaiPage {
   clearSearch(): void {
     this.searchInput.next('');
     this.search.set('');
-    this.reloadFromFirstPage();
+    this.reload();
+  }
+
+  onSortChange(event: Sort): void {
+    if (!event.active || !event.direction) return;
+
+    this.sort.set({ active: event.active as PegawaiSort, direction: event.direction });
+    this.reload();
   }
 
   onRoleChange(value: Role | ''): void {
     this.roleFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   onStatusChange(value: Status | ''): void {
     this.statusFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   onBidangChange(value: number | ''): void {
     this.bidangFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   onPangkatChange(value: number | ''): void {
     this.pangkatFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   onKategoriJabatanChange(value: KategoriJabatan | ''): void {
     this.kategoriJabatanFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   onKategoriKebutuhanChange(value: KategoriKebutuhanJamPelatihan | ''): void {
     this.kategoriKebutuhanFilter.set(value);
-    this.reloadFromFirstPage();
+    this.reload();
   }
 
   resetFilters(): void {
@@ -201,21 +222,7 @@ export class PegawaiPage {
     this.pangkatFilter.set('');
     this.kategoriJabatanFilter.set('');
     this.kategoriKebutuhanFilter.set('');
-    this.reloadFromFirstPage();
-  }
-
-  previousPage(): void {
-    if (this.page() === 0) return;
-
-    this.page.update((page) => page - 1);
-    this.load();
-  }
-
-  nextPage(): void {
-    if (!this.hasNext()) return;
-
-    this.page.update((page) => page + 1);
-    this.load();
+    this.reload();
   }
 
   openCreate(): void {
@@ -256,10 +263,8 @@ export class PegawaiPage {
           .subscribe({
             next: () => {
               this.snackBar.open('Pegawai dihapus.', 'Tutup', { duration: 3000 });
-              if (this.rows().length === 1 && this.page() > 0) {
-                this.page.update((page) => page - 1);
-              }
-              this.load();
+              this.rows.update((rows) => rows.filter((item) => item.id !== row.id));
+              if (this.rows().length === 0 && this.hasMore()) this.loadMore();
             },
             error: (error: unknown) => {
               this.snackBar.open(apiErrorMessage(error, 'Gagal menghapus pegawai.'), 'Tutup', {
@@ -290,16 +295,60 @@ export class PegawaiPage {
     return row.status === 'aktif' ? 'chip chip-active' : 'chip chip-inactive';
   }
 
-  private reloadFromFirstPage(): void {
-    this.page.set(0);
-    this.load();
+  private fetchPage(reset: boolean): void {
+    const requestId = ++this.requestId;
+
+    if (reset) {
+      this.loading.set(true);
+      this.loadError.set(null);
+    } else {
+      this.loadingMore.set(true);
+      this.loadMoreError.set(null);
+    }
+
+    const label = reset ? 'Gagal memuat data pegawai.' : 'Gagal memuat data berikutnya.';
+
+    this.pegawaiService
+      .listPage(this.query())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          if (requestId !== this.requestId) return;
+
+          this.rows.update((rows) => (reset ? page.items : [...rows, ...page.items]));
+          this.nextCursor.set(
+            page.hasMore && page.nextCursor !== null
+              ? { id: page.nextCursor, value: page.nextCursorValue }
+              : null,
+          );
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+        error: (error: unknown) => {
+          if (requestId !== this.requestId) return;
+
+          if (reset) {
+            this.rows.set([]);
+            this.nextCursor.set(null);
+            this.loading.set(false);
+            this.loadError.set(apiErrorMessage(error, label));
+            return;
+          }
+
+          this.loadingMore.set(false);
+          this.loadMoreError.set(apiErrorMessage(error, label));
+        },
+      });
   }
 
   private query(): PegawaiQuery {
+    const cursor = this.nextCursor();
     const search = this.search().trim();
 
     return {
-      page: this.page(),
+      ...(cursor ? { cursor: cursor.id, cursorValue: cursor.value } : {}),
+      sort: this.sort().active,
+      order: this.sort().direction,
       search: search || undefined,
       role: this.roleFilter() || undefined,
       status: this.statusFilter() || undefined,
@@ -335,8 +384,7 @@ export class PegawaiPage {
           'Tutup',
           { duration: 3000 },
         );
-        if (!pegawai) this.page.set(0);
-        this.load();
+        this.reload();
       });
   }
 

@@ -4,16 +4,23 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, type MatDialogConfig } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import { PAGE_SIZE } from '../../../core/constants/pegawai';
 import { apiErrorMessage } from '../../../core/http/api-error';
-import type { Bidang } from '../../../core/models/api.models';
-import { BidangService } from '../../../core/services/bidang.service';
+import type { Bidang, SortOrder } from '../../../core/models/api.models';
+import {
+  BidangService,
+  type BidangQuery,
+  type BidangSort,
+} from '../../../core/services/bidang.service';
+import type { Cursor } from '../../../core/util/pagination';
 import {
   ConfirmDialog,
   type ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog';
+import { InfiniteScrollDirective } from '../../../shared/infinite-scroll/infinite-scroll';
 import {
   BidangFormDialog,
   type BidangFormDialogData,
@@ -26,7 +33,15 @@ const dialogConfig: MatDialogConfig = {
 
 @Component({
   selector: 'app-bidang-page',
-  imports: [MatButtonModule, MatIconModule, MatProgressBarModule, MatTableModule],
+  imports: [
+    InfiniteScrollDirective,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatSortModule,
+    MatTableModule,
+  ],
   templateUrl: './bidang-page.html',
   styleUrl: './bidang-page.scss',
 })
@@ -38,54 +53,51 @@ export class BidangPage {
 
   readonly rows = signal<Bidang[]>([]);
   readonly loading = signal(true);
+  readonly loadingMore = signal(false);
   readonly loadError = signal<string | null>(null);
-  readonly page = signal(0);
-  readonly hasNext = computed(() => this.rows().length === PAGE_SIZE);
+  readonly loadMoreError = signal<string | null>(null);
+  readonly nextCursor = signal<Cursor | null>(null);
+  readonly hasMore = computed(() => this.nextCursor() !== null);
+  readonly canLoadMore = computed(
+    () => this.hasMore() && !this.loading() && !this.loadingMore() && this.loadMoreError() === null,
+  );
+
+  readonly sort = signal<{ active: BidangSort; direction: SortOrder }>({
+    active: 'bidang',
+    direction: 'asc',
+  });
+
   readonly columns = ['bidang', 'actions'];
 
   private requestId = 0;
 
   constructor() {
-    this.load();
+    this.reload();
   }
 
-  load(): void {
-    const requestId = ++this.requestId;
-    this.loading.set(true);
-    this.loadError.set(null);
-
-    this.bidangService
-      .listPage(this.page())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (rows) => {
-          if (requestId !== this.requestId) return;
-
-          this.rows.set(rows);
-          this.loading.set(false);
-        },
-        error: (error: unknown) => {
-          if (requestId !== this.requestId) return;
-
-          this.rows.set([]);
-          this.loadError.set(apiErrorMessage(error, 'Gagal memuat data bidang.'));
-          this.loading.set(false);
-        },
-      });
+  reload(): void {
+    this.nextCursor.set(null);
+    this.rows.set([]);
+    this.loadMoreError.set(null);
+    this.fetchPage(true);
   }
 
-  previousPage(): void {
-    if (this.page() === 0) return;
+  loadMore(): void {
+    if (!this.canLoadMore()) return;
 
-    this.page.update((page) => page - 1);
-    this.load();
+    this.fetchPage(false);
   }
 
-  nextPage(): void {
-    if (!this.hasNext()) return;
+  retryLoadMore(): void {
+    this.loadMoreError.set(null);
+    this.loadMore();
+  }
 
-    this.page.update((page) => page + 1);
-    this.load();
+  onSortChange(event: Sort): void {
+    if (!event.active || !event.direction) return;
+
+    this.sort.set({ active: event.active as BidangSort, direction: event.direction });
+    this.reload();
   }
 
   openCreate(): void {
@@ -119,10 +131,8 @@ export class BidangPage {
           .subscribe({
             next: () => {
               this.snackBar.open('Bidang dihapus.', 'Tutup', { duration: 3000 });
-              if (this.rows().length === 1 && this.page() > 0) {
-                this.page.update((page) => page - 1);
-              }
-              this.load();
+              this.rows.update((rows) => rows.filter((item) => item.id !== row.id));
+              if (this.rows().length === 0 && this.hasMore()) this.loadMore();
             },
             error: (error: unknown) => {
               this.snackBar.open(apiErrorMessage(error, 'Gagal menghapus bidang.'), 'Tutup', {
@@ -131,6 +141,62 @@ export class BidangPage {
             },
           });
       });
+  }
+
+  private fetchPage(reset: boolean): void {
+    const requestId = ++this.requestId;
+
+    if (reset) {
+      this.loading.set(true);
+      this.loadError.set(null);
+    } else {
+      this.loadingMore.set(true);
+      this.loadMoreError.set(null);
+    }
+
+    const label = reset ? 'Gagal memuat data bidang.' : 'Gagal memuat data berikutnya.';
+
+    this.bidangService
+      .listPage(this.query())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          if (requestId !== this.requestId) return;
+
+          this.rows.update((rows) => (reset ? page.items : [...rows, ...page.items]));
+          this.nextCursor.set(
+            page.hasMore && page.nextCursor !== null
+              ? { id: page.nextCursor, value: page.nextCursorValue }
+              : null,
+          );
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
+        error: (error: unknown) => {
+          if (requestId !== this.requestId) return;
+
+          if (reset) {
+            this.rows.set([]);
+            this.nextCursor.set(null);
+            this.loading.set(false);
+            this.loadError.set(apiErrorMessage(error, label));
+            return;
+          }
+
+          this.loadingMore.set(false);
+          this.loadMoreError.set(apiErrorMessage(error, label));
+        },
+      });
+  }
+
+  private query(): BidangQuery {
+    const cursor = this.nextCursor();
+
+    return {
+      ...(cursor ? { cursor: cursor.id, cursorValue: cursor.value } : {}),
+      sort: this.sort().active,
+      order: this.sort().direction,
+    };
   }
 
   private openFormDialog(bidang?: Bidang): void {
@@ -152,8 +218,7 @@ export class BidangPage {
         this.snackBar.open(bidang ? 'Bidang diperbarui.' : 'Bidang baru ditambahkan.', 'Tutup', {
           duration: 3000,
         });
-        if (!bidang) this.page.set(0);
-        this.load();
+        this.reload();
       });
   }
 }

@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { apiErrorMessage } from '../../../core/http/api-error';
-import type { ApiUser, LoginInput } from '../../../core/models/api.models';
+import type { LoginInput, Pegawai } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
 import { loginSchema } from '../../../core/validation/form-schemas';
 
@@ -66,7 +66,7 @@ export class LoginPage {
     });
   }
 
-  private redirect(user: ApiUser): void {
+  private redirect(user: Pegawai): void {
     if (user.role !== 'admin') {
       void this.router.navigateByUrl('/akses-ditolak');
       return;

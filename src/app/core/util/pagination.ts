@@ -1,24 +1,31 @@
 import { EMPTY, expand, type Observable, reduce } from 'rxjs';
-import { PAGE_SIZE } from '../constants/pegawai';
+import type { Page } from '../models/api.models';
 
 /** Safety net so a broken endpoint cannot loop forever. */
 const MAX_PAGES = 50;
 
-/**
- * The API paginates with a 0-based `page` param and no total, so the only way to
- * know the next page exists is a full page of results.
- */
-export function hasNextPage(items: readonly unknown[]): boolean {
-  return items.length === PAGE_SIZE;
+export interface Cursor {
+  id: number;
+  value: string | null;
+}
+
+/** The API only paginates by keyset, so the next page is driven by its cursor. */
+export function toCursor(page: Page<unknown>): Cursor | null {
+  if (!page.hasMore || page.nextCursor === null) return null;
+
+  return { id: page.nextCursor, value: page.nextCursorValue };
 }
 
 /** Reads every page of a list endpoint. Only for small lookup tables. */
-export function collectPages<T>(fetchPage: (page: number) => Observable<T[]>): Observable<T[]> {
-  function readFrom(page: number): Observable<T[]> {
-    return fetchPage(page).pipe(
-      expand((items) => (page + 1 < MAX_PAGES && hasNextPage(items) ? readFrom(page + 1) : EMPTY)),
-    );
-  }
+export function collectPages<T>(
+  fetchPage: (cursor: Cursor | null) => Observable<Page<T>>,
+): Observable<T[]> {
+  return fetchPage(null).pipe(
+    expand((page, index) => {
+      const cursor = toCursor(page);
 
-  return readFrom(0).pipe(reduce((all, items) => [...all, ...items], [] as T[]));
+      return cursor && index + 1 < MAX_PAGES ? fetchPage(cursor) : EMPTY;
+    }),
+    reduce((all: T[], page) => [...all, ...page.items], [] as T[]),
+  );
 }
