@@ -17,6 +17,10 @@ export interface TaskFormModel {
   completed: boolean;
 }
 
+export interface ImageFormModel {
+  filename: string;
+}
+
 type Check = readonly [kind: string, failed: boolean, message: string];
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
@@ -56,6 +60,11 @@ export const taskFormSchema = schema<TaskFormModel>((path) => {
   });
 
   required(path.due_date, { message: 'Due date is required.' });
+});
+
+export const imageFormSchema = schema<ImageFormModel>((path) => {
+  required(path.filename, { message: 'File name is required.' });
+  maxLength(path.filename, 255, { message: 'File name must be 255 characters or fewer.' });
 });
 
 export const validationSampleSchema = schema<ValidationSample>((path) => {

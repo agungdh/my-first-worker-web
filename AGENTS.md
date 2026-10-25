@@ -75,3 +75,12 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Image uploads
+
+- Always compress in the browser first with `src/app/core/util/image-compress.ts`: longest side is capped at 2048px and the image is re-encoded to JPEG at descending quality until the blob is <= 2 MB.
+- If compression still cannot get under 2 MB, reject the file in the UI and never call the API.
+- Upload flow: `POST /api/images/presign` with `{ content_type, size }` → `PUT` the compressed blob straight to the returned R2 URL without cookies → `POST /api/images` with `{ key, filename }`.
+- The presigned URL signs the exact byte length, so upload the same blob whose `size` was sent to `/presign`. A different byte count fails with `403 SignatureDoesNotMatch`.
+- `GET` responses include 1-hour presigned download URLs; reload the gallery instead of caching those URLs long-term.
+

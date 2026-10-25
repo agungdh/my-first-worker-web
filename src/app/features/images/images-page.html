@@ -1,0 +1,122 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Images</h1>
+      <p>Upload compressed images and keep the gallery tidy.</p>
+    </div>
+    <div class="page-actions">
+      <button mat-flat-button type="button" (click)="openUpload()">
+        <mat-icon>upload</mat-icon>
+        Upload image
+      </button>
+    </div>
+  </header>
+
+  @if (loadError(); as message) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon>error</mat-icon>
+      <div class="alert-body">
+        <strong>Could not load images</strong>
+        <p>{{ message }}</p>
+      </div>
+      <button mat-button type="button" (click)="load()">Retry</button>
+    </div>
+  }
+
+  <section class="filter-bar" aria-label="Image filters">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Search images</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [value]="search()" (input)="onSearch($event)" placeholder="File name" />
+      @if (search()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Clear search"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <span class="spacer"></span>
+
+    <span class="result-count text-muted">
+      {{ filtered().length }} of {{ images().length }} images · {{ totalSize() }}
+    </span>
+
+    <button
+      mat-icon-button
+      type="button"
+      (click)="load()"
+      [disabled]="loading()"
+      aria-label="Refresh images"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </section>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Loading images" />
+  }
+
+  @if (!loading() && images().length === 0) {
+    <div class="empty-state">
+      <mat-icon>photo_library</mat-icon>
+      <h2>No images yet</h2>
+      <p class="text-muted">
+        Upload your first image. It is compressed before it leaves the browser.
+      </p>
+      <button mat-flat-button type="button" (click)="openUpload()">
+        <mat-icon>upload</mat-icon>
+        Upload image
+      </button>
+    </div>
+  } @else if (!loading() && filtered().length === 0) {
+    <div class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h2>No matching images</h2>
+      <p class="text-muted">Try a different file name.</p>
+      <button mat-stroked-button type="button" (click)="clearSearch()">Clear search</button>
+    </div>
+  } @else {
+    <section class="gallery" aria-label="Image gallery">
+      @for (image of filtered(); track image.id) {
+        <article class="image-card">
+          <div class="thumb">
+            <img [src]="image.url" [alt]="image.filename" loading="lazy" />
+
+            <button
+              mat-icon-button
+              type="button"
+              class="card-menu"
+              [matMenuTriggerFor]="rowMenu"
+              [attr.aria-label]="'Actions for ' + image.filename"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #rowMenu="matMenu">
+              <button mat-menu-item type="button" (click)="openEdit(image)">
+                <mat-icon>edit</mat-icon>
+                <span>Rename or replace</span>
+              </button>
+              <mat-divider />
+              <button mat-menu-item type="button" (click)="confirmDelete(image)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete image</span>
+              </button>
+            </mat-menu>
+          </div>
+
+          <div class="meta">
+            <strong [title]="image.filename">{{ image.filename }}</strong>
+            <span class="text-muted">{{ formatBytes(image.size) }} · {{ image.content_type }}</span>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</div>

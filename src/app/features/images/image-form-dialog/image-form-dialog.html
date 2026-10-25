@@ -1,0 +1,67 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit image' : 'Upload image' }}</h2>
+
+<form (submit)="save($event)" novalidate>
+  <mat-dialog-content class="dialog-content">
+    @if (errorMessage(); as message) {
+      <div class="alert alert-error" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <div class="picker-row">
+      <div class="preview">
+        @if (previewUrl(); as url) {
+          <img [src]="url" alt="Preview of the selected image" />
+        } @else {
+          <mat-icon>image</mat-icon>
+        }
+      </div>
+
+      <div class="picker-copy">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="filePicker.click()"
+          [disabled]="compressing() || saving()"
+        >
+          <mat-icon>upload</mat-icon>
+          {{ isEdit ? 'Choose replacement' : 'Choose image' }}
+        </button>
+
+        <input #filePicker type="file" accept="image/*" hidden (change)="onFileSelected($event)" />
+
+        <p class="text-muted hint">
+          Images are compressed in your browser. Max {{ maxLabel }} after compression.
+        </p>
+
+        @if (compressedLabel(); as label) {
+          <p class="size-note">
+            <strong>{{ label }}</strong> after compression
+          </p>
+        } @else if (currentLabel(); as label) {
+          <p class="size-note text-muted">{{ label }} currently stored</p>
+        }
+      </div>
+    </div>
+
+    @if (compressing()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Compressing image" />
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>File name</mat-label>
+      <input matInput [formField]="form.filename" placeholder="team-photo.jpg" />
+      @for (error of form.filename().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Cancel</button>
+    <button mat-flat-button type="submit" [disabled]="saving() || compressing()">
+      {{ saving() ? 'Uploading…' : submitLabel() }}
+    </button>
+  </mat-dialog-actions>
+</form>

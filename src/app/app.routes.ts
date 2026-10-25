@@ -33,6 +33,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tasks/tasks-page').then((m) => m.TasksPage),
       },
       {
+        path: 'images',
+        title: 'Images · Worker Admin',
+        loadComponent: () => import('./features/images/images-page').then((m) => m.ImagesPage),
+      },
+      {
         path: 'validation',
         title: 'Validation lab · Worker Admin',
         loadComponent: () =>

@@ -51,6 +51,7 @@ export class AdminShell {
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'space_dashboard', route: '/dashboard' },
     { label: 'Tasks', icon: 'task_alt', route: '/tasks' },
+    { label: 'Images', icon: 'photo_library', route: '/images' },
     { label: 'Validation lab', icon: 'rule', route: '/validation' },
   ];
 
@@ -88,6 +89,7 @@ export class AdminShell {
     const path = url.split('?')[0];
 
     if (path.startsWith('/tasks')) return 'Tasks';
+    if (path.startsWith('/images')) return 'Images';
     if (path.startsWith('/validation')) return 'Validation lab';
     if (path.startsWith('/dashboard')) return 'Dashboard';
 

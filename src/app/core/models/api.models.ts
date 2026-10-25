@@ -45,6 +45,28 @@ export interface ValidationSample {
   password: string;
 }
 
+export interface Image {
+  id: number;
+  key: string;
+  filename: string;
+  content_type: string;
+  size: number;
+  url: string;
+}
+
+export interface PresignedUpload {
+  key: string;
+  upload_url: string;
+  method: 'PUT';
+  headers: Record<string, string>;
+  expires_in: number;
+}
+
+export interface SaveImageInput {
+  key: string;
+  filename: string;
+}
+
 export interface ApiError {
   code: number;
   message: string;
@@ -74,6 +96,21 @@ export interface TaskResponse {
 export interface ValidationResponse {
   success: boolean;
   data: ValidationSample;
+}
+
+export interface ImageListResponse {
+  success: boolean;
+  images: Image[];
+}
+
+export interface ImageResponse {
+  success: boolean;
+  image: Image;
+}
+
+export interface PresignResponse {
+  success: boolean;
+  upload: PresignedUpload;
 }
 
 export type TaskStatus = 'completed' | 'pending' | 'overdue';
