@@ -1,0 +1,117 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Validation lab</h1>
+      <p>Try the API's multi-message validation endpoint with a sample payload.</p>
+    </div>
+  </header>
+
+  <div class="lab-grid">
+    <mat-card appearance="outlined" class="panel-card">
+      <mat-card-header>
+        <mat-card-title>Send a payload</mat-card-title>
+        <mat-card-subtitle>POST /api/testing/validation</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (errors().length > 0) {
+          <div class="alert alert-error" role="alert">
+            <mat-icon>error</mat-icon>
+            <div>
+              <strong>{{ errors().length }} validation issue(s)</strong>
+              <ul class="error-list">
+                @for (error of errors(); track $index) {
+                  <li>{{ error }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+
+        @if (result(); as payload) {
+          <div class="alert alert-success" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <div>
+              <strong>Payload accepted</strong>
+              <dl class="result-list">
+                <dt>Name</dt>
+                <dd>{{ payload.name }}</dd>
+                <dt>Email</dt>
+                <dd>{{ payload.email }}</dd>
+                <dt>Password</dt>
+                <dd class="mono">{{ payload.password }}</dd>
+              </dl>
+            </div>
+          </div>
+        }
+
+        <form class="lab-form" (submit)="submit($event)" novalidate>
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <mat-icon matPrefix>badge</mat-icon>
+            <input matInput [formField]="form.name" placeholder="Ada1" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix>alternate_email</mat-icon>
+            <input matInput [formField]="form.email" placeholder="ada@example.com" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <mat-icon matPrefix>key</mat-icon>
+            <input
+              matInput
+              [type]="showPassword() ? 'text' : 'password'"
+              [formField]="form.password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <button mat-flat-button type="submit" class="submit-button" [disabled]="submitting()">
+            @if (submitting()) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>play_arrow</mat-icon>
+            }
+            <span>Validate payload</span>
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="panel-card">
+      <mat-card-header>
+        <mat-card-title>Rules enforced by the API</mat-card-title>
+        <mat-card-subtitle>Every failed rule is returned as its own message</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="rules">
+          @for (group of ruleGroups; track group.field) {
+            <section class="rule-group">
+              <h3>
+                <mat-icon>{{ group.icon }}</mat-icon>
+                {{ group.field }}
+              </h3>
+              <ul>
+                @for (rule of group.rules; track rule) {
+                  <li>{{ rule }}</li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

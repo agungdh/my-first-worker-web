@@ -1,0 +1,85 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav #drawer class="sidenav" [mode]="isMobile() ? 'over' : 'side'" [opened]="!isMobile()">
+    <div class="sidenav-header">
+      <span class="brand-mark" aria-hidden="true"><mat-icon>hub</mat-icon></span>
+      <div class="brand-copy">
+        <strong>Worker Admin</strong>
+        <span class="text-muted">Cloudflare Tasks</span>
+      </div>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="nav-list" aria-label="Main navigation">
+      @for (item of navItems; track item.route) {
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeOnMobile(drawer)"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <div class="api-status">
+        <mat-icon>dns</mat-icon>
+        <div>
+          <span>API target</span>
+          <strong class="mono">{{ apiBaseUrl }}</strong>
+        </div>
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="surface">
+    <mat-toolbar class="toolbar">
+      @if (isMobile()) {
+        <button
+          mat-icon-button
+          type="button"
+          (click)="drawer.toggle()"
+          aria-label="Toggle navigation"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+
+      <span class="toolbar-title">{{ pageTitle() }}</span>
+      <span class="spacer"></span>
+
+      <button
+        mat-button
+        type="button"
+        class="user-button"
+        [matMenuTriggerFor]="userMenu"
+        aria-label="Account menu"
+      >
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="user-meta">
+          <span class="user-name">{{ user()?.name ?? 'Signed in' }}</span>
+          <span class="user-handle">@{{ user()?.username ?? 'user' }}</span>
+        </span>
+        <mat-icon>expand_more</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        <div class="menu-header">
+          <strong>{{ user()?.name ?? 'Signed in' }}</strong>
+          <span class="text-muted">@{{ user()?.username ?? 'user' }}</span>
+        </div>
+        <mat-divider />
+        <button mat-menu-item type="button" (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <router-outlet />
+  </mat-sidenav-content>
+</mat-sidenav-container>

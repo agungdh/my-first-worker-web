@@ -1,0 +1,60 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark" aria-hidden="true"><mat-icon>hub</mat-icon></span>
+      <div>
+        <strong>Worker Admin</strong>
+        <p class="text-muted">Cloudflare Tasks</p>
+      </div>
+    </div>
+
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-subtitle">Sign in with your account to open the dashboard.</p>
+
+    @if (errorMessage(); as message) {
+      <div class="alert alert-error" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <form class="auth-form" (submit)="submit($event)" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Username</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput [formField]="form.username" autocomplete="username" placeholder="admin" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <mat-icon matPrefix>lock</mat-icon>
+        <input
+          matInput
+          [type]="showPassword() ? 'text' : 'password'"
+          [formField]="form.password"
+          autocomplete="current-password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        >
+          <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <button mat-flat-button type="submit" class="submit-button" [disabled]="submitting()">
+        @if (submitting()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" />
+        } @else {
+          <mat-icon>login</mat-icon>
+        }
+        <span>Sign in</span>
+      </button>
+    </form>
+
+    <p class="auth-switch">Don't have an account? <a routerLink="/register">Create one</a></p>
+  </div>
+</div>
