@@ -4,42 +4,26 @@ import { collectPages, toCursor } from './pagination';
 
 describe('pagination', () => {
   it('derives the next cursor only when another page exists', () => {
-    expect(toCursor({ items: [], nextCursor: 7, nextCursorValue: 'Budi', hasMore: true })).toEqual({
-      id: 7,
-      value: 'Budi',
-    });
-    expect(
-      toCursor({ items: [], nextCursor: null, nextCursorValue: null, hasMore: false }),
-    ).toBeNull();
-    expect(
-      toCursor({ items: [], nextCursor: 7, nextCursorValue: 'Budi', hasMore: false }),
-    ).toBeNull();
+    expect(toCursor({ items: [], nextId: 7, hasMore: true })).toBe(7);
+    expect(toCursor({ items: [], nextId: null, hasMore: false })).toBeNull();
+    expect(toCursor({ items: [], nextId: 7, hasMore: false })).toBeNull();
+    expect(toCursor({ items: [], nextId: null, hasMore: true })).toBeNull();
   });
 
-  it('follows the cursor until has_more is false', () => {
-    const first: Page<number> = {
-      items: [1, 2],
-      nextCursor: 2,
-      nextCursorValue: 'dua',
-      hasMore: true,
-    };
-    const second: Page<number> = {
-      items: [3],
-      nextCursor: null,
-      nextCursorValue: null,
-      hasMore: false,
-    };
-    const cursors: ReturnType<typeof toCursor>[] = [];
+  it('follows next_id until has_more is false', () => {
+    const first: Page<number> = { items: [1, 2], nextId: 2, hasMore: true };
+    const second: Page<number> = { items: [3], nextId: null, hasMore: false };
+    const cursors: (number | null)[] = [];
     let collected: number[] = [];
 
-    collectPages((cursor) => {
-      cursors.push(cursor);
-      return of(cursor === null ? first : second);
+    collectPages((id) => {
+      cursors.push(id);
+      return of(id === null ? first : second);
     }).subscribe((items) => {
       collected = items;
     });
 
     expect(collected).toEqual([1, 2, 3]);
-    expect(cursors).toEqual([null, { id: 2, value: 'dua' }]);
+    expect(cursors).toEqual([null, 2]);
   });
 });

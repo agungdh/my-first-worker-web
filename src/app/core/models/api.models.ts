@@ -93,18 +93,19 @@ export interface AuthResponse {
   user: Pegawai;
 }
 
-/** Cursor metadata shared by every list endpoint. */
+/**
+ * Keyset metadata shared by every list endpoint. `id` is the only pagination
+ * anchor, so `next_id` is the single value to echo back on the next request.
+ */
 export interface CursorPageMeta {
-  next_cursor: number | null;
-  next_cursor_value: string | null;
+  next_id: number | null;
   has_more: boolean;
 }
 
 /** Normalized list page used by services and infinite-scroll pages. */
 export interface Page<T> {
   items: T[];
-  nextCursor: number | null;
-  nextCursorValue: string | null;
+  nextId: number | null;
   hasMore: boolean;
 }
 

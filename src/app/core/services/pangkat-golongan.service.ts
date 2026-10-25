@@ -16,8 +16,7 @@ import { collectPages } from '../util/pagination';
 export type PangkatGolonganSort = 'id' | 'jenjang' | 'pangkat' | 'golongan' | 'ruang';
 
 export interface PangkatGolonganQuery {
-  cursor?: number;
-  cursorValue?: string | null;
+  id?: number;
   sort: PangkatGolonganSort;
   order: SortOrder;
 }
@@ -28,26 +27,23 @@ export class PangkatGolonganService {
 
   listPage(query: PangkatGolonganQuery): Observable<Page<PangkatGolongan>> {
     let params = new HttpParams().set('sort', query.sort).set('order', query.order);
-    if (query.cursor !== undefined) params = params.set('cursor', query.cursor.toString());
-    if (query.cursorValue != null) params = params.set('cursor_value', query.cursorValue);
+    if (query.id !== undefined) params = params.set('id', query.id.toString());
 
     return this.http
       .get<PangkatGolonganListResponse>(`${environment.apiBaseUrl}/pangkat-golongan`, { params })
       .pipe(
         map((response) => ({
           items: response.pangkat_golongan ?? [],
-          nextCursor: response.next_cursor,
-          nextCursorValue: response.next_cursor_value,
+          nextId: response.next_id,
           hasMore: response.has_more,
         })),
       );
   }
 
   listAll(): Observable<PangkatGolongan[]> {
-    return collectPages((cursor) =>
+    return collectPages((id) =>
       this.listPage({
-        cursor: cursor?.id,
-        cursorValue: cursor?.value,
+        id: id ?? undefined,
         sort: 'golongan',
         order: 'asc',
       }),

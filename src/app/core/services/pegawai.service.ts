@@ -19,8 +19,7 @@ import type {
 export type PegawaiSort = 'id' | 'nama' | 'nip';
 
 export interface PegawaiQuery {
-  cursor?: number;
-  cursorValue?: string | null;
+  id?: number;
   sort: PegawaiSort;
   order: SortOrder;
   search?: string;
@@ -38,8 +37,7 @@ export class PegawaiService {
 
   listPage(query: PegawaiQuery): Observable<Page<Pegawai>> {
     let params = new HttpParams().set('sort', query.sort).set('order', query.order);
-    if (query.cursor !== undefined) params = params.set('cursor', query.cursor.toString());
-    if (query.cursorValue != null) params = params.set('cursor_value', query.cursorValue);
+    if (query.id !== undefined) params = params.set('id', query.id.toString());
 
     if (query.search) params = params.set('search', query.search);
     if (query.role) params = params.set('role', query.role);
@@ -56,8 +54,7 @@ export class PegawaiService {
     return this.http.get<PegawaiListResponse>(`${environment.apiBaseUrl}/pegawai`, { params }).pipe(
       map((response) => ({
         items: response.pegawai ?? [],
-        nextCursor: response.next_cursor,
-        nextCursorValue: response.next_cursor_value,
+        nextId: response.next_id,
         hasMore: response.has_more,
       })),
     );

@@ -11,7 +11,7 @@ import {
 
 /**
  * Emits `scrolled` whenever the host element gets close to the viewport.
- * Cursor-paginated lists use it to append the next page.
+ * Keyset-paginated lists use it to append the next page.
  */
 @Directive({ selector: '[appInfiniteScroll]' })
 export class InfiniteScrollDirective {

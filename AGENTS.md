@@ -8,7 +8,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Build UI with **Angular Material** (`@angular/material`) and the Angular CDK (`@angular/cdk`).
 - The Material 3 theme lives in `src/styles.scss` (uses `mat.theme()` with the azure/blue palettes and Roboto typography). Extend the theme there instead of hardcoding colors.
 - Use Material system variables (e.g. `var(--mat-sys-surface)`, `var(--mat-sys-on-surface)`) for custom styling so light/dark theming keeps working.
-- Layout patterns: navigation shell (`mat-sidenav` + `mat-toolbar`), data tables (`mat-table`) with server-side filters, cursor pagination via infinite scroll, and sortable columns, dialogs for create/edit, snackbars for feedback.
+- Layout patterns: navigation shell (`mat-sidenav` + `mat-toolbar`), data tables (`mat-table`) with server-side filters, keyset pagination via infinite scroll, and sortable columns, dialogs for create/edit, snackbars for feedback.
 - Icons use Material Symbols Outlined; declare them with `<mat-icon>icon_name</mat-icon>`.
 
 ## TypeScript Best Practices
@@ -67,7 +67,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Import only the specific Material components/directives each component needs; do not import a barrel of everything.
 - Prefer Material components over hand-rolled UI for tables, forms, dialogs, menus, tabs, and navigation.
 - Follow the Material 3 design spec; keep spacing, density, and typography consistent with the theme.
-- List endpoints use cursor pagination and return no total. Send `sort`, `order`, and on subsequent requests `cursor` + `cursor_value`; stop when `has_more` is false. Append pages with infinite scroll (`InfiniteScrollDirective` + `IntersectionObserver`), never with a "full page means there may be a next page" heuristic. Do not add `MatPaginator`.
+- List endpoints use keyset pagination and return no total. `id` is the only pagination anchor and the only cursor param. The FE always sends `sort` + `order` explicitly, so the API default (`sort=id`, `order=desc`, newest first) only applies to a request that sends no params at all — do not rely on it or drop the explicit sort to "use the default". Request the first page without `id`, then echo `next_id` back as `id` and stop when `has_more` is false. There is no `cursor`, `cursor_value`, `limit`, or `page` param. Append pages with infinite scroll (`InfiniteScrollDirective` + `IntersectionObserver`), never with a "full page means there may be a next page" heuristic. Do not add `MatPaginator`.
 - Sorting is server-side: use `MatSort` with `matSortDisableClear` and map `active`/`direction` to the API's per-module `sort` enum and `order`. Only expose columns the API supports (pegawai `nama`/`nip`, bidang `bidang`, pangkat-golongan `jenjang`/`pangkat`/`golongan`/`ruang`). A sort change resets the list.
 - Use native `<select matNativeControl>` for select fields inside Signal Forms; `mat-select` does not implement `FormValueControl` in the installed Material version.
 - Use `MatDialog` for create/edit flows instead of navigating away, and `MatSnackBar` for action feedback.
@@ -84,20 +84,20 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 Base URL comes from `src/environments/environment*.ts` (`http://localhost:8787/api` locally, `https://api.rakawik.my.id/api` in production). The backend lives in `/home/agungdh/repo/my-first-worker`.
 
-| Endpoint                                | Notes                                                                                                                                                                                                     |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /auth/login`                      | `{ nip, password }` → `{ success, user }` with the full pegawai (relations included) and sets an HttpOnly `access_token` cookie                                                                           |
-| `POST /auth/logout`                     | Clears the cookie                                                                                                                                                                                         |
-| `GET/POST/PUT/DELETE /pegawai`          | List: `cursor`, `cursor_value`, `sort` (`id`/`nama`/`nip`), `order`, `search` (min 3 chars), `role`, `status`, `bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan` |
-| `GET/POST/PUT/DELETE /bidang`           | List: `cursor`, `cursor_value`, `sort` (`id`/`bidang`), `order`                                                                                                                                           |
-| `GET/POST/PUT/DELETE /pangkat-golongan` | List: `cursor`, `cursor_value`, `sort` (`id`/`jenjang`/`pangkat`/`golongan`/`ruang`), `order`                                                                                                             |
+| Endpoint                                | Notes                                                                                                                                                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`                      | `{ nip, password }` → `{ success, user }` with the full pegawai (relations included) and sets an HttpOnly `access_token` cookie                                                                |
+| `POST /auth/logout`                     | Clears the cookie                                                                                                                                                                              |
+| `GET/POST/PUT/DELETE /pegawai`          | List: `id` (cursor), `sort` (`id`/`nama`/`nip`), `order`, `search` (min 3 chars), `role`, `status`, `bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan` |
+| `GET/POST/PUT/DELETE /bidang`           | List: `id` (cursor), `sort` (`id`/`bidang`), `order`                                                                                                                                           |
+| `GET/POST/PUT/DELETE /pangkat-golongan` | List: `id` (cursor), `sort` (`id`/`jenjang`/`pangkat`/`golongan`/`ruang`), `order`                                                                                                             |
 
-Every list response carries `next_cursor`, `next_cursor_value`, and `has_more` alongside its items.
+Every list response carries `next_id` (the `id` to echo back for the next page, or `null`) and `has_more` alongside its items.
 
 Rules:
 
 - Auth is a cookie, not a bearer token: every request needs `withCredentials: true` (the interceptor adds it). The JWT only carries the pegawai id (`sub`); the backend resolves the principal from the database on every request. There is **no `/me`** endpoint: `SessionStore` caches the full pegawai returned by login in localStorage (key `mfw.admin.session.v3`) so the shell renders without another fetch. A 401 clears the session and redirects to `/login`; a 403 redirects to `/akses-ditolak` (the cached role can be stale).
-- Cursor pagination is forward-only: echo `next_cursor`/`next_cursor_value` as `cursor`/`cursor_value` to append the next page, and stop when `has_more` is `false`. `cursor_value` is required whenever `sort` is not `id`.
+- Pagination is forward-only keyset on `(sort_column, id)`: the backend resolves the sort value of the `id` row itself, so never send a sort value alongside the cursor. Echo `next_id` as `id` to append the next page and stop when `has_more` is `false`. Keep the same `sort`/`order` for every page of one list, and reset the list (drop `id`) when the sort or a filter changes. A cursor pointing at a row that no longer exists returns an empty page with `has_more: false`, so treat that as the end of the list, not an error.
 - All data endpoints are admin-only. Non-admin accounts can log in but are routed to `/akses-ditolak`.
 - Request/response payloads are snake_case (`bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan`), while TypeScript models keep the API names because they mirror the wire format.
 - Create/update/delete return only `{ success: true }` (no entity), so reload the list after saving. Updates are full `PUT`: send every field, with `null` for empty nullable fields.

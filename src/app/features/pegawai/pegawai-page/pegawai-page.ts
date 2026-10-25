@@ -41,7 +41,6 @@ import {
   type PegawaiQuery,
   type PegawaiSort,
 } from '../../../core/services/pegawai.service';
-import type { Cursor } from '../../../core/util/pagination';
 import {
   ConfirmDialog,
   type ConfirmDialogData,
@@ -94,8 +93,8 @@ export class PegawaiPage {
   readonly loadingMore = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly loadMoreError = signal<string | null>(null);
-  readonly nextCursor = signal<Cursor | null>(null);
-  readonly hasMore = computed(() => this.nextCursor() !== null);
+  readonly nextId = signal<number | null>(null);
+  readonly hasMore = computed(() => this.nextId() !== null);
   readonly canLoadMore = computed(
     () => this.hasMore() && !this.loading() && !this.loadingMore() && this.loadMoreError() === null,
   );
@@ -141,7 +140,7 @@ export class PegawaiPage {
   }
 
   reload(): void {
-    this.nextCursor.set(null);
+    this.nextId.set(null);
     this.rows.set([]);
     this.loadMoreError.set(null);
 
@@ -316,11 +315,7 @@ export class PegawaiPage {
           if (requestId !== this.requestId) return;
 
           this.rows.update((rows) => (reset ? page.items : [...rows, ...page.items]));
-          this.nextCursor.set(
-            page.hasMore && page.nextCursor !== null
-              ? { id: page.nextCursor, value: page.nextCursorValue }
-              : null,
-          );
+          this.nextId.set(page.hasMore ? page.nextId : null);
           this.loading.set(false);
           this.loadingMore.set(false);
         },
@@ -329,7 +324,7 @@ export class PegawaiPage {
 
           if (reset) {
             this.rows.set([]);
-            this.nextCursor.set(null);
+            this.nextId.set(null);
             this.loading.set(false);
             this.loadError.set(apiErrorMessage(error, label));
             return;
@@ -342,11 +337,11 @@ export class PegawaiPage {
   }
 
   private query(): PegawaiQuery {
-    const cursor = this.nextCursor();
+    const id = this.nextId();
     const search = this.search().trim();
 
     return {
-      ...(cursor ? { cursor: cursor.id, cursorValue: cursor.value } : {}),
+      ...(id !== null ? { id } : {}),
       sort: this.sort().active,
       order: this.sort().direction,
       search: search || undefined,
