@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { EMPTY, expand, map, type Observable, reduce } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import type {
   CreateTaskInput,
   Task,
@@ -8,7 +9,6 @@ import type {
   TaskResponse,
   UpdateTaskInput,
 } from '../models/api.models';
-import { API_BASE_URL } from '../config/api.config';
 
 const PAGE_SIZE = 20;
 const MAX_PAGES = 50;
@@ -24,7 +24,7 @@ export class TaskService {
     }
 
     return this.http
-      .get<TaskListResponse>(`${API_BASE_URL}/tasks`, { params })
+      .get<TaskListResponse>(`${environment.apiBaseUrl}/tasks`, { params })
       .pipe(map((response) => response.tasks ?? []));
   }
 
@@ -41,25 +41,25 @@ export class TaskService {
 
   getBySlug(slug: string): Observable<Task> {
     return this.http
-      .get<TaskResponse>(`${API_BASE_URL}/tasks/${encodeURIComponent(slug)}`)
+      .get<TaskResponse>(`${environment.apiBaseUrl}/tasks/${encodeURIComponent(slug)}`)
       .pipe(map((response) => response.task));
   }
 
   create(input: CreateTaskInput): Observable<Task> {
     return this.http
-      .post<TaskResponse>(`${API_BASE_URL}/tasks`, input)
+      .post<TaskResponse>(`${environment.apiBaseUrl}/tasks`, input)
       .pipe(map((response) => response.task));
   }
 
   update(slug: string, input: UpdateTaskInput): Observable<Task> {
     return this.http
-      .put<TaskResponse>(`${API_BASE_URL}/tasks/${encodeURIComponent(slug)}`, input)
+      .put<TaskResponse>(`${environment.apiBaseUrl}/tasks/${encodeURIComponent(slug)}`, input)
       .pipe(map((response) => response.task));
   }
 
   delete(slug: string): Observable<Task> {
     return this.http
-      .delete<TaskResponse>(`${API_BASE_URL}/tasks/${encodeURIComponent(slug)}`)
+      .delete<TaskResponse>(`${environment.apiBaseUrl}/tasks/${encodeURIComponent(slug)}`)
       .pipe(map((response) => response.task));
   }
 

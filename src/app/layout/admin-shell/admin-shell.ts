@@ -10,7 +10,7 @@ import { MatSidenavModule, type MatSidenav } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { API_BASE_URL } from '../../core/config/api.config';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 
 interface NavItem {
@@ -42,7 +42,7 @@ export class AdminShell {
   private readonly auth = inject(AuthService);
 
   readonly user = this.auth.user;
-  readonly apiBaseUrl = API_BASE_URL;
+  readonly apiBaseUrl = environment.apiBaseUrl;
   readonly isMobile = toSignal(
     this.breakpoint.observe('(max-width: 959px)').pipe(map((state) => state.matches)),
     { initialValue: false },

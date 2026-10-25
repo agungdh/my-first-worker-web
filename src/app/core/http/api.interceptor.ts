@@ -2,7 +2,7 @@ import { HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http'
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { API_BASE_URL } from '../config/api.config';
+import { environment } from '../../../environments/environment';
 import { SessionStore } from '../session/session-store';
 
 export const apiInterceptor: HttpInterceptorFn = (request, next) => {
@@ -11,7 +11,7 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(request.clone({ withCredentials: true })).pipe(
     catchError((error: unknown) => {
-      const isAuthRequest = request.url.startsWith(`${API_BASE_URL}/auth/`);
+      const isAuthRequest = request.url.startsWith(`${environment.apiBaseUrl}/auth/`);
 
       if (error instanceof HttpErrorResponse && error.status === 401 && !isAuthRequest) {
         session.clear();
