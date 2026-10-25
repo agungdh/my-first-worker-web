@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>
+  {{ isEdit ? 'Ubah pangkat & golongan' : 'Tambah pangkat & golongan' }}
+</h2>
+
+<form (submit)="save($event)" novalidate>
+  <mat-dialog-content class="dialog-content">
+    @if (errorMessage(); as message) {
+      <div class="alert alert-error" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Jenjang</mat-label>
+        <input matInput [formField]="form.jenjang" autocomplete="off" placeholder="Penata" />
+        @for (error of form.jenjang().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Pangkat</mat-label>
+        <input matInput [formField]="form.pangkat" autocomplete="off" placeholder="Penata Muda" />
+        @for (error of form.pangkat().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Golongan</mat-label>
+        <input matInput [formField]="form.golongan" autocomplete="off" placeholder="III" />
+        @for (error of form.golongan().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ruang</mat-label>
+        <input matInput [formField]="form.ruang" autocomplete="off" placeholder="a" />
+        @for (error of form.ruang().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Batal</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+    </button>
+  </mat-dialog-actions>
+</form>

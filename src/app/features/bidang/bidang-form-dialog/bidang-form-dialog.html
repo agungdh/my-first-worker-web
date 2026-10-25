@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Ubah bidang' : 'Tambah bidang' }}</h2>
+
+<form (submit)="save($event)" novalidate>
+  <mat-dialog-content class="dialog-content">
+    @if (errorMessage(); as message) {
+      <div class="alert alert-error" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nama bidang</mat-label>
+      <input
+        matInput
+        [formField]="form.bidang"
+        autocomplete="off"
+        placeholder="Contoh: SUBBAGIAN KEPEGAWAIAN"
+      />
+      @for (error of form.bidang().errors(); track error.kind) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Batal</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+    </button>
+  </mat-dialog-actions>
+</form>

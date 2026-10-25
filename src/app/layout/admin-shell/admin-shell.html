@@ -1,17 +1,17 @@
 <mat-sidenav-container class="shell">
   <mat-sidenav #drawer class="sidenav" [mode]="isMobile() ? 'over' : 'side'" [opened]="!isMobile()">
     <div class="sidenav-header">
-      <span class="brand-mark" aria-hidden="true"><mat-icon>hub</mat-icon></span>
+      <span class="brand-mark" aria-hidden="true"><mat-icon>badge</mat-icon></span>
       <div class="brand-copy">
-        <strong>Worker Admin</strong>
-        <span class="text-muted">Cloudflare Tasks</span>
+        <strong>Admin Kepegawaian</strong>
+        <span class="text-muted">Panel data pegawai</span>
       </div>
     </div>
 
     <mat-divider />
 
-    <mat-nav-list class="nav-list" aria-label="Main navigation">
-      @for (item of navItems; track item.route) {
+    <mat-nav-list class="nav-list" aria-label="Navigasi utama">
+      @for (item of navItems(); track item.route) {
         <a
           mat-list-item
           [routerLink]="item.route"
@@ -24,6 +24,13 @@
         </a>
       }
     </mat-nav-list>
+
+    @if (!isAdmin()) {
+      <div class="sidenav-note">
+        <mat-icon>info</mat-icon>
+        <p>Akun Anda tidak memiliki akses admin.</p>
+      </div>
+    }
 
     <div class="sidenav-footer">
       <div class="api-status">
@@ -43,7 +50,7 @@
           mat-icon-button
           type="button"
           (click)="drawer.toggle()"
-          aria-label="Toggle navigation"
+          aria-label="Buka atau tutup navigasi"
         >
           <mat-icon>menu</mat-icon>
         </button>
@@ -57,25 +64,26 @@
         type="button"
         class="user-button"
         [matMenuTriggerFor]="userMenu"
-        aria-label="Account menu"
+        aria-label="Menu akun"
       >
         <span class="avatar" aria-hidden="true">{{ initials() }}</span>
         <span class="user-meta">
-          <span class="user-name">{{ user()?.name ?? 'Signed in' }}</span>
-          <span class="user-handle">@{{ user()?.username ?? 'user' }}</span>
+          <span class="user-name">{{ user()?.nama ?? 'Pengguna' }}</span>
+          <span class="user-handle">{{ user()?.nip ?? '—' }}</span>
         </span>
         <mat-icon>expand_more</mat-icon>
       </button>
 
       <mat-menu #userMenu="matMenu">
         <div class="menu-header">
-          <strong>{{ user()?.name ?? 'Signed in' }}</strong>
-          <span class="text-muted">@{{ user()?.username ?? 'user' }}</span>
+          <strong>{{ user()?.nama ?? 'Pengguna' }}</strong>
+          <span class="text-muted">NIP {{ user()?.nip ?? '—' }}</span>
+          <span class="role-chip">{{ roleText() }}</span>
         </div>
         <mat-divider />
         <button mat-menu-item type="button" (click)="logout()">
           <mat-icon>logout</mat-icon>
-          <span>Sign out</span>
+          <span>Keluar</span>
         </button>
       </mat-menu>
     </mat-toolbar>

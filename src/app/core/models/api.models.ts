@@ -1,76 +1,85 @@
-export interface User {
+export type Role = 'admin' | 'pegawai';
+export type Status = 'aktif' | 'non_aktif';
+export type KategoriJabatan = 'struktural' | 'fungsional auditor' | 'fungsional tertentu';
+export type KategoriKebutuhanJamPelatihan = 'admin' | 'pejabat' | 'auditor';
+
+/** Identity returned by `POST /api/auth/login`; the token itself lives in an HttpOnly cookie. */
+export interface ApiUser {
   id: number;
-  username: string;
-  name: string;
+  nip: string;
+  nama: string;
+  role: Role;
 }
 
-export interface Task {
-  name: string;
-  slug: string;
-  description?: string;
-  completed: boolean;
-  due_date: string;
+export interface Bidang {
+  id: number;
+  bidang: string;
 }
 
-export interface CreateTaskInput {
-  name: string;
-  slug: string;
-  description?: string;
-  completed: boolean;
-  due_date: string;
+export interface BidangRef {
+  id: number;
+  bidang: string;
 }
 
-export interface UpdateTaskInput {
-  name: string;
-  slug: string;
-  description: string | null;
-  completed: boolean;
-  due_date: string;
+export interface PangkatGolongan {
+  id: number;
+  jenjang: string;
+  pangkat: string;
+  golongan: string;
+  ruang: string;
+}
+
+export type PangkatGolonganRef = PangkatGolongan;
+
+export interface Pegawai {
+  id: number;
+  nip: string;
+  nama: string;
+  role: Role;
+  status: Status;
+  jabatan: string | null;
+  peran: string | null;
+  kategori_jabatan: KategoriJabatan | null;
+  kategori_kebutuhan_jam_pelatihan: KategoriKebutuhanJamPelatihan | null;
+  bidang: BidangRef;
+  pangkat_golongan: PangkatGolonganRef | null;
+}
+
+export interface PegawaiInput {
+  nip: string;
+  nama: string;
+  role: Role;
+  status: Status;
+  bidang_id: number;
+  pangkat_golongan_id: number | null;
+  jabatan: string | null;
+  peran: string | null;
+  kategori_jabatan: KategoriJabatan | null;
+  kategori_kebutuhan_jam_pelatihan: KategoriKebutuhanJamPelatihan | null;
+  /** Omitted on create means "default to NIP"; omitted on update means "keep current". */
+  password?: string;
+}
+
+export interface BidangInput {
+  bidang: string;
+}
+
+export interface PangkatGolonganInput {
+  jenjang: string;
+  pangkat: string;
+  golongan: string;
+  ruang: string;
 }
 
 export interface LoginInput {
-  username: string;
+  nip: string;
   password: string;
-}
-
-export interface RegisterInput {
-  username: string;
-  name: string;
-  password: string;
-}
-
-export interface ValidationSample {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface Image {
-  id: number;
-  key: string;
-  filename: string;
-  content_type: string;
-  size: number;
-  url: string;
-}
-
-export interface PresignedUpload {
-  key: string;
-  upload_url: string;
-  method: 'PUT';
-  headers: Record<string, string>;
-  expires_in: number;
-}
-
-export interface SaveImageInput {
-  key: string;
-  filename: string;
 }
 
 export interface ApiError {
   code: number;
   message: string;
-  path?: Array<string | number>;
+  path?: string[];
 }
 
 export interface ApiFailure {
@@ -78,45 +87,41 @@ export interface ApiFailure {
   errors: ApiError[];
 }
 
+export interface SuccessResponse {
+  success: boolean;
+}
+
 export interface AuthResponse {
   success: boolean;
-  user: User;
+  user: ApiUser;
 }
 
-export interface TaskListResponse {
+export interface PegawaiListResponse {
   success: boolean;
-  tasks: Task[];
+  pegawai: Pegawai[];
 }
 
-export interface TaskResponse {
+export interface PegawaiResponse {
   success: boolean;
-  task: Task;
+  pegawai: Pegawai;
 }
 
-export interface ValidationResponse {
+export interface BidangListResponse {
   success: boolean;
-  data: ValidationSample;
+  bidang: Bidang[];
 }
 
-export interface ImageListResponse {
+export interface BidangResponse {
   success: boolean;
-  images: Image[];
+  bidang: Bidang;
 }
 
-export interface ImageResponse {
+export interface PangkatGolonganListResponse {
   success: boolean;
-  image: Image;
+  pangkat_golongan: PangkatGolongan[];
 }
 
-export interface PresignResponse {
+export interface PangkatGolonganResponse {
   success: boolean;
-  upload: PresignedUpload;
-}
-
-export type TaskStatus = 'completed' | 'pending' | 'overdue';
-
-export interface TaskView extends Task {
-  dueLabel: string;
-  status: TaskStatus;
-  overdue: boolean;
+  pangkat_golongan: PangkatGolongan;
 }

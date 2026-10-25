@@ -1,16 +1,22 @@
 import { computed, Service, signal } from '@angular/core';
-import type { User } from '../models/api.models';
+import type { ApiUser, Role } from '../models/api.models';
 
-const STORAGE_KEY = 'mfw.admin.session';
+const STORAGE_KEY = 'mfw.admin.session.v2';
+const ROLES: readonly Role[] = ['admin', 'pegawai'];
 
+/**
+ * The real credential is the HttpOnly auth cookie. This store only keeps the
+ * identity returned at login so the shell can render without a `/me` endpoint.
+ */
 @Service()
 export class SessionStore {
-  private readonly state = signal<User | null>(readSession());
+  private readonly state = signal<ApiUser | null>(readSession());
 
   readonly user = this.state.asReadonly();
   readonly isAuthenticated = computed(() => this.state() !== null);
+  readonly isAdmin = computed(() => this.state()?.role === 'admin');
 
-  set(user: User): void {
+  set(user: ApiUser): void {
     this.state.set(user);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -29,19 +35,26 @@ export class SessionStore {
   }
 }
 
-function readSession(): User | null {
+function readSession(): ApiUser | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as Partial<User> | null;
+    const parsed = JSON.parse(raw) as Partial<ApiUser> | null;
     if (
       parsed &&
       typeof parsed.id === 'number' &&
-      typeof parsed.username === 'string' &&
-      typeof parsed.name === 'string'
+      typeof parsed.nip === 'string' &&
+      typeof parsed.nama === 'string' &&
+      typeof parsed.role === 'string' &&
+      ROLES.includes(parsed.role as Role)
     ) {
-      return { id: parsed.id, username: parsed.username, name: parsed.name };
+      return {
+        id: parsed.id,
+        nip: parsed.nip,
+        nama: parsed.nama,
+        role: parsed.role as Role,
+      };
     }
   } catch {
     return null;

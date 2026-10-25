@@ -1,104 +1,176 @@
+import { maxLength, pattern, required, schema, validate } from '@angular/forms/signals';
 import {
-  maxLength,
-  minLength,
-  pattern,
-  required,
-  schema,
-  validate,
-  type ValidationError,
-} from '@angular/forms/signals';
-import type { LoginInput, RegisterInput, ValidationSample } from '../models/api.models';
+  BIDANG_MAX_LENGTH,
+  GOLONGAN_MAX_LENGTH,
+  JENJANG_MAX_LENGTH,
+  KATEGORI_JABATAN_OPTIONS,
+  KATEGORI_KEBUTUHAN_JAM_PELATIHAN_OPTIONS,
+  NAMA_MAX_LENGTH,
+  NIP_MAX_LENGTH,
+  NIP_PATTERN,
+  PANGKAT_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  ROLE_OPTIONS,
+  RUANG_MAX_LENGTH,
+  STATUS_OPTIONS,
+  TEXT_MAX_LENGTH,
+} from '../constants/pegawai';
+import type {
+  KategoriJabatan,
+  KategoriKebutuhanJamPelatihan,
+  LoginInput,
+  Role,
+  Status,
+} from '../models/api.models';
 
-export interface TaskFormModel {
-  name: string;
-  slug: string;
-  description: string;
-  due_date: string;
-  completed: boolean;
+export interface PegawaiFormModel {
+  nip: string;
+  nama: string;
+  role: Role | '';
+  status: Status | '';
+  bidang_id: string;
+  pangkat_golongan_id: string;
+  jabatan: string;
+  peran: string;
+  kategori_jabatan: KategoriJabatan | '';
+  kategori_kebutuhan_jam_pelatihan: KategoriKebutuhanJamPelatihan | '';
+  password: string;
 }
 
-export interface ImageFormModel {
-  filename: string;
+export interface BidangFormModel {
+  bidang: string;
 }
 
-type Check = readonly [kind: string, failed: boolean, message: string];
-
-const USERNAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
-const SLUG_PATTERN = /^[a-z0-9-]+$/;
-
-function failedChecks(checks: readonly Check[]): ValidationError.WithoutFieldTree[] {
-  return checks.filter(([, failed]) => failed).map(([kind, , message]) => ({ kind, message }));
+export interface PangkatGolonganFormModel {
+  jenjang: string;
+  pangkat: string;
+  golongan: string;
+  ruang: string;
 }
 
 export const loginSchema = schema<LoginInput>((path) => {
-  required(path.username, { message: 'Username is required.' });
-  required(path.password, { message: 'Password is required.' });
+  required(path.nip, { message: 'NIP wajib diisi.' });
+  pattern(path.nip, NIP_PATTERN, { message: 'NIP harus 8-20 digit angka.' });
+  required(path.password, { message: 'Password wajib diisi.' });
+  maxLength(path.password, PASSWORD_MAX_LENGTH, {
+    message: `Password maksimal ${PASSWORD_MAX_LENGTH} karakter.`,
+  });
 });
 
-export const registerSchema = schema<RegisterInput>((path) => {
-  required(path.name, { message: 'Name is required.' });
-  maxLength(path.name, 100, { message: 'Name must be 100 characters or fewer.' });
+export const pegawaiFormSchema = schema<PegawaiFormModel>((path) => {
+  required(path.nip, { message: 'NIP wajib diisi.' });
+  pattern(path.nip, NIP_PATTERN, { message: 'NIP harus 8-20 digit angka.' });
+  maxLength(path.nip, NIP_MAX_LENGTH, { message: `NIP maksimal ${NIP_MAX_LENGTH} karakter.` });
 
-  required(path.username, { message: 'Username is required.' });
-  minLength(path.username, 3, { message: 'Username must be at least 3 characters.' });
-  maxLength(path.username, 32, { message: 'Username must be 32 characters or fewer.' });
-  pattern(path.username, USERNAME_PATTERN, {
-    message: 'Use only letters, numbers, dots, underscores and hyphens.',
+  required(path.nama, { message: 'Nama wajib diisi.' });
+  maxLength(path.nama, NAMA_MAX_LENGTH, {
+    message: `Nama maksimal ${NAMA_MAX_LENGTH} karakter.`,
   });
 
-  required(path.password, { message: 'Password is required.' });
-  minLength(path.password, 8, { message: 'Password must be at least 8 characters.' });
-  maxLength(path.password, 128, { message: 'Password must be 128 characters or fewer.' });
-});
+  required(path.role, { message: 'Role wajib dipilih.' });
+  validate(path.role, ({ value }) =>
+    value() && !ROLE_OPTIONS.some((option) => option.value === value())
+      ? [{ kind: 'role.invalid', message: 'Role tidak dikenal.' }]
+      : [],
+  );
 
-export const taskFormSchema = schema<TaskFormModel>((path) => {
-  required(path.name, { message: 'Name is required.' });
+  required(path.status, { message: 'Status wajib dipilih.' });
+  validate(path.status, ({ value }) =>
+    value() && !STATUS_OPTIONS.some((option) => option.value === value())
+      ? [{ kind: 'status.invalid', message: 'Status tidak dikenal.' }]
+      : [],
+  );
 
-  required(path.slug, { message: 'Slug is required.' });
-  pattern(path.slug, SLUG_PATTERN, {
-    message: 'Use lowercase letters, numbers and hyphens only.',
+  required(path.bidang_id, { message: 'Bidang wajib dipilih.' });
+
+  validate(path.pangkat_golongan_id, ({ value }) =>
+    value() && !isPositiveInteger(value())
+      ? [{ kind: 'pangkat.invalid', message: 'Pangkat golongan tidak valid.' }]
+      : [],
+  );
+
+  maxLength(path.jabatan, TEXT_MAX_LENGTH, {
+    message: `Jabatan maksimal ${TEXT_MAX_LENGTH} karakter.`,
+  });
+  maxLength(path.peran, TEXT_MAX_LENGTH, {
+    message: `Peran maksimal ${TEXT_MAX_LENGTH} karakter.`,
   });
 
-  required(path.due_date, { message: 'Due date is required.' });
-});
+  validate(path.kategori_jabatan, ({ value }) =>
+    value() && !KATEGORI_JABATAN_OPTIONS.some((option) => option.value === value())
+      ? [{ kind: 'kategoriJabatan.invalid', message: 'Kategori jabatan tidak dikenal.' }]
+      : [],
+  );
 
-export const imageFormSchema = schema<ImageFormModel>((path) => {
-  required(path.filename, { message: 'File name is required.' });
-  maxLength(path.filename, 255, { message: 'File name must be 255 characters or fewer.' });
-});
+  validate(path.kategori_kebutuhan_jam_pelatihan, ({ value }) =>
+    value() && !KATEGORI_KEBUTUHAN_JAM_PELATIHAN_OPTIONS.some((option) => option.value === value())
+      ? [
+          {
+            kind: 'kategoriKebutuhan.invalid',
+            message: 'Kategori kebutuhan jam pelatihan tidak dikenal.',
+          },
+        ]
+      : [],
+  );
 
-export const validationSampleSchema = schema<ValidationSample>((path) => {
-  validate(path.name, ({ value }) => {
-    const name = value();
-
-    return failedChecks([
-      ['name.minLength', name.length < 3, 'name minimal 3 karakter'],
-      ['name.maxLength', name.length > 50, 'name maksimal 50 karakter'],
-      ['name.noWhitespace', /\s/.test(name), 'name tidak boleh mengandung spasi'],
-      ['name.uppercase', !/[A-Z]/.test(name), 'name harus mengandung minimal 1 huruf besar'],
-      ['name.number', !/[0-9]/.test(name), 'name harus mengandung minimal 1 angka'],
-    ]);
-  });
-
-  validate(path.email, ({ value }) => {
-    const email = value();
-
-    return failedChecks([
-      ['email.atSign', !email.includes('@'), 'email harus mengandung @'],
-      ['email.dot', !email.includes('.'), 'email harus mengandung titik'],
-      ['email.maxLength', email.length > 100, 'email maksimal 100 karakter'],
-    ]);
-  });
-
+  // Empty means "use the NIP" on create and "keep current" on update.
   validate(path.password, ({ value }) => {
-    const password = value();
+    const password = value().trim();
 
-    return failedChecks([
-      ['password.minLength', password.length < 8, 'password minimal 8 karakter'],
-      ['password.uppercase', !/[A-Z]/.test(password), 'password harus mengandung huruf besar'],
-      ['password.lowercase', !/[a-z]/.test(password), 'password harus mengandung huruf kecil'],
-      ['password.number', !/[0-9]/.test(password), 'password harus mengandung angka'],
-      ['password.symbol', !/[^A-Za-z0-9]/.test(password), 'password harus mengandung simbol'],
-    ]);
+    if (!password) return [];
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return [
+        {
+          kind: 'password.minLength',
+          message: `Password minimal ${PASSWORD_MIN_LENGTH} karakter.`,
+        },
+      ];
+    }
+    if (password.length > PASSWORD_MAX_LENGTH) {
+      return [
+        {
+          kind: 'password.maxLength',
+          message: `Password maksimal ${PASSWORD_MAX_LENGTH} karakter.`,
+        },
+      ];
+    }
+
+    return [];
   });
 });
+
+export const bidangFormSchema = schema<BidangFormModel>((path) => {
+  required(path.bidang, { message: 'Nama bidang wajib diisi.' });
+  maxLength(path.bidang, BIDANG_MAX_LENGTH, {
+    message: `Nama bidang maksimal ${BIDANG_MAX_LENGTH} karakter.`,
+  });
+});
+
+export const pangkatGolonganFormSchema = schema<PangkatGolonganFormModel>((path) => {
+  required(path.jenjang, { message: 'Jenjang wajib diisi.' });
+  maxLength(path.jenjang, JENJANG_MAX_LENGTH, {
+    message: `Jenjang maksimal ${JENJANG_MAX_LENGTH} karakter.`,
+  });
+
+  required(path.pangkat, { message: 'Pangkat wajib diisi.' });
+  maxLength(path.pangkat, PANGKAT_MAX_LENGTH, {
+    message: `Pangkat maksimal ${PANGKAT_MAX_LENGTH} karakter.`,
+  });
+
+  required(path.golongan, { message: 'Golongan wajib diisi.' });
+  maxLength(path.golongan, GOLONGAN_MAX_LENGTH, {
+    message: `Golongan maksimal ${GOLONGAN_MAX_LENGTH} karakter.`,
+  });
+
+  required(path.ruang, { message: 'Ruang wajib diisi.' });
+  maxLength(path.ruang, RUANG_MAX_LENGTH, {
+    message: `Ruang maksimal ${RUANG_MAX_LENGTH} karakter.`,
+  });
+});
+
+function isPositiveInteger(value: string): boolean {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0;
+}

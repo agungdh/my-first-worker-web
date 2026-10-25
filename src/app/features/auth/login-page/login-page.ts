@@ -6,9 +6,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { apiErrorMessage } from '../../../core/http/api-error';
-import type { LoginInput } from '../../../core/models/api.models';
+import type { ApiUser, LoginInput } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
 import { loginSchema } from '../../../core/validation/form-schemas';
 
@@ -21,7 +21,6 @@ import { loginSchema } from '../../../core/validation/form-schemas';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
-    RouterLink,
   ],
   templateUrl: './login-page.html',
 })
@@ -30,7 +29,7 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  private readonly model = signal<LoginInput>({ username: '', password: '' });
+  private readonly model = signal<LoginInput>({ nip: '', password: '' });
 
   readonly form = form(this.model, loginSchema);
 
@@ -56,20 +55,33 @@ export class LoginPage {
     this.submitting.set(true);
     this.errorMessage.set(null);
 
-    this.auth.login(formState.value()).subscribe({
-      next: () => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-        const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/dashboard';
-        void this.router.navigateByUrl(target);
-      },
+    const value = formState.value();
+
+    this.auth.login({ nip: value.nip.trim(), password: value.password }).subscribe({
+      next: (user) => this.redirect(user),
       error: (error: unknown) => {
         this.submitting.set(false);
-        this.errorMessage.set(
-          error instanceof HttpErrorResponse && error.status === 401
-            ? 'Invalid username or password.'
-            : apiErrorMessage(error, 'Unable to sign in.'),
-        );
+        this.errorMessage.set(this.describeError(error));
       },
     });
+  }
+
+  private redirect(user: ApiUser): void {
+    if (user.role !== 'admin') {
+      void this.router.navigateByUrl('/akses-ditolak');
+      return;
+    }
+
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/dashboard';
+    void this.router.navigateByUrl(target);
+  }
+
+  private describeError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 401) {
+      return 'NIP atau password salah.';
+    }
+
+    return apiErrorMessage(error, 'Tidak dapat masuk. Silakan coba lagi.');
   }
 }

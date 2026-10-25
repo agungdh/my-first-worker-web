@@ -1,0 +1,248 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Pegawai</h1>
+      <p>Kelola data pegawai, role, status, dan atribut kepegawaian.</p>
+    </div>
+    <div class="page-actions">
+      <button mat-stroked-button type="button" (click)="resetFilters()" [disabled]="loading()">
+        <mat-icon>filter_alt_off</mat-icon>
+        Reset filter
+      </button>
+      <button mat-flat-button type="button" (click)="openCreate()">
+        <mat-icon>person_add</mat-icon>
+        Tambah pegawai
+      </button>
+    </div>
+  </header>
+
+  @if (loadError(); as message) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon>error</mat-icon>
+      <div class="alert-body">
+        <strong>Gagal memuat data pegawai</strong>
+        <p>{{ message }}</p>
+      </div>
+      <button mat-button type="button" (click)="load()">Coba lagi</button>
+    </div>
+  }
+
+  <section class="filter-bar" aria-label="Filter pegawai">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Cari pegawai</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        [value]="search()"
+        (input)="onSearch($event)"
+        placeholder="Nama atau NIP"
+        autocomplete="off"
+      />
+      @if (search()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Hapus pencarian"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+      @if (searchTooShort()) {
+        <mat-hint>Ketik minimal {{ searchMinLength }} karakter.</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Role</mat-label>
+      <mat-select [value]="roleFilter()" (selectionChange)="onRoleChange($event.value)">
+        <mat-option value="">Semua</mat-option>
+        @for (option of roleOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select [value]="statusFilter()" (selectionChange)="onStatusChange($event.value)">
+        <mat-option value="">Semua</mat-option>
+        @for (option of statusOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Bidang</mat-label>
+      <mat-select [value]="bidangFilter()" (selectionChange)="onBidangChange($event.value)">
+        <mat-option value="">Semua</mat-option>
+        @for (option of bidangOptions(); track option.id) {
+          <mat-option [value]="option.id">{{ option.bidang }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Pangkat &amp; golongan</mat-label>
+      <mat-select [value]="pangkatFilter()" (selectionChange)="onPangkatChange($event.value)">
+        <mat-option value="">Semua</mat-option>
+        @for (option of pangkatOptions(); track option.id) {
+          <mat-option [value]="option.id">
+            {{ option.pangkat }} ({{ option.golongan }}/{{ option.ruang }})
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Kategori jabatan</mat-label>
+      <mat-select
+        [value]="kategoriJabatanFilter()"
+        (selectionChange)="onKategoriJabatanChange($event.value)"
+      >
+        <mat-option value="">Semua</mat-option>
+        @for (option of kategoriJabatanOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+      <mat-label>Kebutuhan jam pelatihan</mat-label>
+      <mat-select
+        [value]="kategoriKebutuhanFilter()"
+        (selectionChange)="onKategoriKebutuhanChange($event.value)"
+      >
+        <mat-option value="">Semua</mat-option>
+        @for (option of kategoriKebutuhanOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </section>
+
+  @if (!loadError()) {
+    <section class="table-card" aria-label="Daftar pegawai">
+      @if (loading()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Memuat data pegawai" />
+      }
+
+      @if (searchTooShort()) {
+        <div class="empty-state">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <h2>Pencarian terlalu pendek</h2>
+          <p>Ketik minimal {{ searchMinLength }} karakter untuk mencari nama atau NIP.</p>
+        </div>
+      } @else if (!loading() && rows().length === 0) {
+        <div class="empty-state">
+          <mat-icon aria-hidden="true">groups</mat-icon>
+          <h2>Belum ada pegawai</h2>
+          <p>Data pegawai yang cocok dengan filter akan tampil di sini.</p>
+          <button mat-flat-button type="button" (click)="openCreate()">
+            <mat-icon>person_add</mat-icon>
+            Tambah pegawai
+          </button>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table mat-table [dataSource]="rows()" class="table">
+            <ng-container matColumnDef="nama">
+              <th mat-header-cell *matHeaderCellDef scope="col">Nama</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="name-cell">
+                  <span class="name">{{ row.nama }}</span>
+                  <span class="sub">{{ row.peran || '—' }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nip">
+              <th mat-header-cell *matHeaderCellDef scope="col">NIP</th>
+              <td mat-cell *matCellDef="let row" class="mono">{{ row.nip }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="bidang">
+              <th mat-header-cell *matHeaderCellDef scope="col">Bidang</th>
+              <td mat-cell *matCellDef="let row">{{ row.bidang.bidang }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="pangkat">
+              <th mat-header-cell *matHeaderCellDef scope="col">Pangkat &amp; golongan</th>
+              <td mat-cell *matCellDef="let row">{{ pangkatText(row) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="jabatan">
+              <th mat-header-cell *matHeaderCellDef scope="col">Jabatan</th>
+              <td mat-cell *matCellDef="let row">{{ row.jabatan || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef scope="col">Role</th>
+              <td mat-cell *matCellDef="let row">{{ roleText(row) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef scope="col">Status</th>
+              <td mat-cell *matCellDef="let row">
+                <span [class]="statusClass(row)">{{ statusText(row) }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef scope="col" class="actions-header">Aksi</th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button
+                  mat-icon-button
+                  type="button"
+                  (click)="openEdit(row)"
+                  [attr.aria-label]="'Ubah data ' + row.nama"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  [disabled]="isSelf(row)"
+                  (click)="remove(row)"
+                  [attr.aria-label]="'Hapus ' + row.nama"
+                  [attr.title]="isSelf(row) ? 'Tidak dapat menghapus akun sendiri' : null"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span class="text-muted">{{ rows().length }} baris · Halaman {{ page() + 1 }}</span>
+          <div class="pager">
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="page() === 0 || loading()"
+              (click)="previousPage()"
+            >
+              <mat-icon>chevron_left</mat-icon>
+              Sebelumnya
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="!hasNext() || loading()"
+              (click)="nextPage()"
+            >
+              Berikutnya
+              <mat-icon iconPositionEnd>chevron_right</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>

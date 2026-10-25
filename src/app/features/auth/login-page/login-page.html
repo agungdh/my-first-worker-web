@@ -1,15 +1,15 @@
 <div class="auth-page">
   <div class="auth-card">
     <div class="auth-brand">
-      <span class="brand-mark" aria-hidden="true"><mat-icon>hub</mat-icon></span>
+      <span class="brand-mark" aria-hidden="true"><mat-icon>badge</mat-icon></span>
       <div>
-        <strong>Worker Admin</strong>
-        <p class="text-muted">Cloudflare Tasks</p>
+        <strong>Admin Kepegawaian</strong>
+        <p class="text-muted">Panel administrasi data pegawai</p>
       </div>
     </div>
 
-    <h1 class="auth-title">Welcome back</h1>
-    <p class="auth-subtitle">Sign in with your account to open the dashboard.</p>
+    <h1 class="auth-title">Masuk</h1>
+    <p class="auth-subtitle">Gunakan NIP dan password Anda untuk membuka panel admin.</p>
 
     @if (errorMessage(); as message) {
       <div class="alert alert-error" role="alert">
@@ -20,10 +20,16 @@
 
     <form class="auth-form" (submit)="submit($event)" novalidate>
       <mat-form-field appearance="outline">
-        <mat-label>Username</mat-label>
-        <mat-icon matPrefix>person</mat-icon>
-        <input matInput [formField]="form.username" autocomplete="username" placeholder="admin" />
-        @for (error of form.username().errors(); track error.kind) {
+        <mat-label>NIP</mat-label>
+        <mat-icon matPrefix>badge</mat-icon>
+        <input
+          matInput
+          inputmode="numeric"
+          [formField]="form.nip"
+          autocomplete="username"
+          placeholder="198001012000011001"
+        />
+        @for (error of form.nip().errors(); track error.kind) {
           <mat-error>{{ error.message }}</mat-error>
         }
       </mat-form-field>
@@ -42,7 +48,7 @@
           matSuffix
           type="button"
           (click)="togglePassword()"
-          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          [attr.aria-label]="showPassword() ? 'Sembunyikan password' : 'Tampilkan password'"
         >
           <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
@@ -57,10 +63,12 @@
         } @else {
           <mat-icon>login</mat-icon>
         }
-        <span>Sign in</span>
+        <span>Masuk</span>
       </button>
     </form>
 
-    <p class="auth-switch">Don't have an account? <a routerLink="/register">Create one</a></p>
+    <p class="auth-switch">
+      Akun dibuat oleh admin melalui menu <strong>Pegawai</strong>. Lupa password? Hubungi admin.
+    </p>
   </div>
 </div>

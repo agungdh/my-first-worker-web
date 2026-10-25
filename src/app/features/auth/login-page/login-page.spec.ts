@@ -3,25 +3,36 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
+import type { ApiUser } from '../../../core/models/api.models';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginPage } from './login-page';
 
 @Component({ template: '' })
 class BlankPage {}
 
+const adminUser: ApiUser = {
+  id: 1,
+  nip: '198001012000011001',
+  nama: 'Administrator',
+  role: 'admin',
+};
+
 describe('LoginPage', () => {
   const auth = {
-    login: vi.fn(() => of({ id: 1, username: 'admin', name: 'Admin User' })),
+    login: vi.fn(() => of(adminUser)),
   };
 
   beforeEach(async () => {
     auth.login.mockClear();
-    auth.login.mockImplementation(() => of({ id: 1, username: 'admin', name: 'Admin User' }));
+    auth.login.mockImplementation(() => of(adminUser));
 
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
-        provideRouter([{ path: 'dashboard', component: BlankPage }]),
+        provideRouter([
+          { path: 'dashboard', component: BlankPage },
+          { path: 'akses-ditolak', component: BlankPage },
+        ]),
         { provide: AuthService, useValue: auth },
       ],
     }).compileComponents();
@@ -42,7 +53,7 @@ describe('LoginPage', () => {
     fixture.detectChanges();
 
     const inputs = fixture.nativeElement.querySelectorAll('input') as NodeListOf<HTMLInputElement>;
-    inputs[0].value = 'admin';
+    inputs[0].value = '198001012000011001';
     inputs[0].dispatchEvent(new Event('input'));
     inputs[1].value = 'Admin123!';
     inputs[1].dispatchEvent(new Event('input'));
@@ -54,7 +65,7 @@ describe('LoginPage', () => {
     fixture.detectChanges();
 
     expect(auth.login).toHaveBeenCalledWith({
-      username: 'admin',
+      nip: '198001012000011001',
       password: 'Admin123!',
     });
   });
@@ -70,8 +81,8 @@ describe('LoginPage', () => {
     fixture.detectChanges();
 
     expect(auth.login).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('Username is required.');
-    expect(fixture.nativeElement.textContent).toContain('Password is required.');
+    expect(fixture.nativeElement.textContent).toContain('NIP wajib diisi.');
+    expect(fixture.nativeElement.textContent).toContain('Password wajib diisi.');
   });
 
   it('shows the backend error when sign in fails', async () => {
@@ -89,7 +100,7 @@ describe('LoginPage', () => {
     fixture.detectChanges();
 
     const inputs = fixture.nativeElement.querySelectorAll('input') as NodeListOf<HTMLInputElement>;
-    inputs[0].value = 'admin';
+    inputs[0].value = '198001012000011001';
     inputs[0].dispatchEvent(new Event('input'));
     inputs[1].value = 'wrong-password';
     inputs[1].dispatchEvent(new Event('input'));
@@ -101,6 +112,6 @@ describe('LoginPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.textContent).toContain('Invalid username or password.');
+    expect(fixture.nativeElement.textContent).toContain('NIP atau password salah.');
   });
 });

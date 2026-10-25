@@ -1,59 +1,35 @@
-# MyFirstWorkerFe
+# Admin Kepegawaian (FE)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.4.
+Angular 22 admin dashboard for the [`my-first-worker`](../my-first-worker) Cloudflare Worker API (Hono + D1 + Drizzle). UI copy is Bahasa Indonesia.
 
-## Development server
+## Prerequisites
 
-To start a local development server, run:
+- The API running locally on `http://localhost:8787` (`npx wrangler dev` in the backend repo), with migrations applied and `npm run seed` executed.
+- The seeded admin logs in with NIP `198001012000011001` and the same string as the password (override with `ADMIN_NIP` / `ADMIN_PASSWORD` when seeding).
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Development
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Open `http://localhost:4200`. The API base URL lives in `src/environments/environment.ts` (`http://localhost:8787/api`); production builds swap in `environment.production.ts` (`https://api.rakawik.my.id/api`).
 
-```bash
-ng generate --help
-```
+## Features
 
-## Building
+- **Auth**: NIP + password, HttpOnly cookie session, no public registration. Non-admin accounts land on an "Akses ditolak" page.
+- **Pegawai**: server-side search (min 3 characters) and filters (role, status, bidang, pangkat/golongan, kategori jabatan, kebutuhan jam pelatihan), prev/next pagination, create/edit dialog, soft delete with confirmation.
+- **Bidang** and **Pangkat & Golongan**: master-data CRUD with pagination.
+- **Dashboard**: intentionally empty placeholder for now.
 
-To build the project run:
+## Scripts
 
-```bash
-ng build
-```
+| Command                                          | Purpose                               |
+| ------------------------------------------------ | ------------------------------------- |
+| `npm start`                                      | Dev server on `http://localhost:4200` |
+| `npm run build`                                  | Production build into `dist/`         |
+| `npm test`                                       | Vitest unit tests                     |
+| `npx prettier --check "src/**/*.{ts,html,scss}"` | Formatting check                      |
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+See `AGENTS.md` for conventions and the API contract.

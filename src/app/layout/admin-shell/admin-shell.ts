@@ -11,6 +11,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { roleLabel } from '../../core/constants/pegawai';
 import { AuthService } from '../../core/services/auth.service';
 
 interface NavItem {
@@ -18,6 +19,21 @@ interface NavItem {
   icon: string;
   route: string;
 }
+
+const NAV_ITEMS: readonly NavItem[] = [
+  { label: 'Dashboard', icon: 'space_dashboard', route: '/dashboard' },
+  { label: 'Pegawai', icon: 'groups', route: '/pegawai' },
+  { label: 'Bidang', icon: 'account_tree', route: '/bidang' },
+  { label: 'Pangkat & Golongan', icon: 'military_tech', route: '/pangkat-golongan' },
+];
+
+const PAGE_TITLES: readonly { prefix: string; title: string }[] = [
+  { prefix: '/pegawai', title: 'Pegawai' },
+  { prefix: '/bidang', title: 'Bidang' },
+  { prefix: '/pangkat-golongan', title: 'Pangkat & Golongan' },
+  { prefix: '/akses-ditolak', title: 'Akses ditolak' },
+  { prefix: '/dashboard', title: 'Dashboard' },
+];
 
 @Component({
   selector: 'app-admin-shell',
@@ -42,18 +58,19 @@ export class AdminShell {
   private readonly auth = inject(AuthService);
 
   readonly user = this.auth.user;
+  readonly isAdmin = this.auth.isAdmin;
   readonly apiBaseUrl = environment.apiBaseUrl;
   readonly isMobile = toSignal(
     this.breakpoint.observe('(max-width: 959px)').pipe(map((state) => state.matches)),
     { initialValue: false },
   );
 
-  readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'space_dashboard', route: '/dashboard' },
-    { label: 'Tasks', icon: 'task_alt', route: '/tasks' },
-    { label: 'Images', icon: 'photo_library', route: '/images' },
-    { label: 'Validation lab', icon: 'rule', route: '/validation' },
-  ];
+  readonly navItems = computed<readonly NavItem[]>(() => (this.isAdmin() ? NAV_ITEMS : []));
+
+  readonly roleText = computed(() => {
+    const user = this.user();
+    return user ? roleLabel(user.role) : '';
+  });
 
   private readonly navigation = toSignal(
     this.router.events.pipe(
@@ -67,8 +84,8 @@ export class AdminShell {
   );
 
   readonly initials = computed(() => {
-    const name = this.user()?.name.trim();
-    if (!name) return 'U';
+    const name = this.user()?.nama.trim();
+    if (!name) return 'A';
 
     return name
       .split(/\s+/)
@@ -88,11 +105,10 @@ export class AdminShell {
   private resolveTitle(url: string): string {
     const path = url.split('?')[0];
 
-    if (path.startsWith('/tasks')) return 'Tasks';
-    if (path.startsWith('/images')) return 'Images';
-    if (path.startsWith('/validation')) return 'Validation lab';
-    if (path.startsWith('/dashboard')) return 'Dashboard';
+    for (const entry of PAGE_TITLES) {
+      if (path.startsWith(entry.prefix)) return entry.title;
+    }
 
-    return 'Worker Admin';
+    return 'Admin Kepegawaian';
   }
 }

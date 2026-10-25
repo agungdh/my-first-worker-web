@@ -19,3 +19,15 @@ export const guestGuard: CanActivateFn = () => {
 
   return session.isAuthenticated() ? router.createUrlTree(['/dashboard']) : true;
 };
+
+/** Every data endpoint is admin-only; non-admin accounts get an explanation page. */
+export const adminGuard: CanActivateFn = () => {
+  const session = inject(SessionStore);
+  const router = inject(Router);
+
+  const user = session.user();
+  if (!user) return router.createUrlTree(['/login']);
+  if (user.role !== 'admin') return router.createUrlTree(['/akses-ditolak']);
+
+  return true;
+};

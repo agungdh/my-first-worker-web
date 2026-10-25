@@ -2,11 +2,13 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Project Context
 
-- This project is an **admin dashboard** application.
+- This project is the **Admin Kepegawaian** dashboard for the `my-first-worker` API.
+- UI copy is **Bahasa Indonesia**. Code, identifiers, and comments stay in English.
+- Backend domains: `pegawai`, `bidang`, `pangkat-golongan`, plus cookie-based auth. There is no register, tasks, images, or validation playground.
 - Build UI with **Angular Material** (`@angular/material`) and the Angular CDK (`@angular/cdk`).
-- The Material 3 theme lives in `src/material-theme.scss` (uses `mat.theme()` with the azure/blue palettes and Roboto typography). Extend the theme there instead of hardcoding colors.
+- The Material 3 theme lives in `src/styles.scss` (uses `mat.theme()` with the azure/blue palettes and Roboto typography). Extend the theme there instead of hardcoding colors.
 - Use Material system variables (e.g. `var(--mat-sys-surface)`, `var(--mat-sys-on-surface)`) for custom styling so light/dark theming keeps working.
-- Layout patterns expected in an admin dashboard: navigation shell (`mat-sidenav` + `mat-toolbar`), data tables (`mat-table` with sorting/pagination), filters, dialogs, snackbars, and dashboard summary cards.
+- Layout patterns: navigation shell (`mat-sidenav` + `mat-toolbar`), data tables (`mat-table`) with server-side filters and prev/next pagination, dialogs for create/edit, snackbars for feedback.
 - Icons use Material Symbols Outlined; declare them with `<mat-icon>icon_name</mat-icon>`.
 
 ## TypeScript Best Practices
@@ -65,7 +67,8 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Import only the specific Material components/directives each component needs; do not import a barrel of everything.
 - Prefer Material components over hand-rolled UI for tables, forms, dialogs, menus, tabs, and navigation.
 - Follow the Material 3 design spec; keep spacing, density, and typography consistent with the theme.
-- For data-heavy admin screens, prefer `mat-table` with `MatSort` and `MatPaginator`, and move filtering/sorting logic into the component with `computed()` where possible.
+- List endpoints paginate with a 0-based `page` param and return no total. Use prev/next pagination driven by "a full page means there may be a next page" (`PAGE_SIZE = 20`). Do not add `MatSort`/`MatPaginator` that imply server-side totals or sorting the API does not support.
+- Use native `<select matNativeControl>` for select fields inside Signal Forms; `mat-select` does not implement `FormValueControl` in the installed Material version.
 - Use `MatDialog` for create/edit flows instead of navigating away, and `MatSnackBar` for action feedback.
 - Ensure every Material form control has a label (`mat-label` or `aria-label`) and proper error messaging via `mat-error`.
 
@@ -76,11 +79,25 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
 
-## Image uploads
+## Backend API
 
-- Always compress in the browser first with `src/app/core/util/image-compress.ts`: longest side is capped at 2048px and the image is re-encoded to JPEG at descending quality until the blob is <= 2 MB.
-- If compression still cannot get under 2 MB, reject the file in the UI and never call the API.
-- Upload flow: `POST /api/images/presign` with `{ content_type, size }` → `PUT` the compressed blob straight to the returned R2 URL without cookies → `POST /api/images` with `{ key, filename }`.
-- The presigned URL signs the exact byte length, so upload the same blob whose `size` was sent to `/presign`. A different byte count fails with `403 SignatureDoesNotMatch`.
-- `GET` responses include 1-hour presigned download URLs; reload the gallery instead of caching those URLs long-term.
+Base URL comes from `src/environments/environment*.ts` (`http://localhost:8787/api` locally, `https://api.rakawik.my.id/api` in production). The backend lives in `/home/agungdh/repo/my-first-worker`.
 
+| Endpoint                                | Notes                                                                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`                      | `{ nip, password }` → `{ success, user: { id, nip, nama, role } }` and sets an HttpOnly `access_token` cookie                                              |
+| `POST /auth/logout`                     | Clears the cookie                                                                                                                                          |
+| `GET/POST/PUT/DELETE /pegawai`          | List filters: `page`, `search` (min 3 chars), `role`, `status`, `bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan` |
+| `GET/POST/PUT/DELETE /bidang`           | `page` only                                                                                                                                                |
+| `GET/POST/PUT/DELETE /pangkat-golongan` | `page` only                                                                                                                                                |
+
+Rules:
+
+- Auth is a cookie, not a bearer token: every request needs `withCredentials: true` (the interceptor adds it). There is **no `/me`** endpoint; `SessionStore` only caches the identity from login for rendering, and a 401 clears it and redirects to `/login`.
+- All data endpoints are admin-only. Non-admin accounts can log in but are routed to `/akses-ditolak`.
+- Request/response payloads are snake_case (`bidang_id`, `pangkat_golongan_id`, `kategori_jabatan`, `kategori_kebutuhan_jam_pelatihan`), while TypeScript models keep the API names because they mirror the wire format.
+- Create/update return only `{ success: true }`, so reload the list after saving. Updates are full `PUT`: send every field, with `null` for empty nullable fields.
+- On create, an empty password means "use the NIP". On update, an empty password means "keep the current one" — omit the key instead of sending an empty string.
+- Request bodies are strict: never add extra keys. Normalize empty text to `null` (`buildPegawaiInput` in the pegawai dialog does this).
+- Errors use `{ success: false, errors: [{ code, message, path? }] }`; show them with `apiErrorMessage()` from `src/app/core/http/api-error.ts`.
+- Field limits must match the backend Zod schemas (NIP 8-20 digits, nama 150, password 8-128, bidang 255, jenjang 100, pangkat 150, golongan 20, ruang 20).

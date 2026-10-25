@@ -1,19 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { adminGuard, authGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
-    title: 'Sign in · Worker Admin',
+    title: 'Masuk · Admin Kepegawaian',
     loadComponent: () => import('./features/auth/login-page/login-page').then((m) => m.LoginPage),
-  },
-  {
-    path: 'register',
-    canActivate: [guestGuard],
-    title: 'Create account · Worker Admin',
-    loadComponent: () =>
-      import('./features/auth/register-page/register-page').then((m) => m.RegisterPage),
   },
   {
     path: '',
@@ -23,25 +16,39 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
-        title: 'Dashboard · Worker Admin',
+        canActivate: [adminGuard],
+        title: 'Dashboard · Admin Kepegawaian',
         loadComponent: () =>
           import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
       },
       {
-        path: 'tasks',
-        title: 'Tasks · Worker Admin',
-        loadComponent: () => import('./features/tasks/tasks-page').then((m) => m.TasksPage),
-      },
-      {
-        path: 'images',
-        title: 'Images · Worker Admin',
-        loadComponent: () => import('./features/images/images-page').then((m) => m.ImagesPage),
-      },
-      {
-        path: 'validation',
-        title: 'Validation lab · Worker Admin',
+        path: 'pegawai',
+        canActivate: [adminGuard],
+        title: 'Pegawai · Admin Kepegawaian',
         loadComponent: () =>
-          import('./features/validation/validation-page').then((m) => m.ValidationPage),
+          import('./features/pegawai/pegawai-page/pegawai-page').then((m) => m.PegawaiPage),
+      },
+      {
+        path: 'bidang',
+        canActivate: [adminGuard],
+        title: 'Bidang · Admin Kepegawaian',
+        loadComponent: () =>
+          import('./features/bidang/bidang-page/bidang-page').then((m) => m.BidangPage),
+      },
+      {
+        path: 'pangkat-golongan',
+        canActivate: [adminGuard],
+        title: 'Pangkat & Golongan · Admin Kepegawaian',
+        loadComponent: () =>
+          import('./features/pangkat-golongan/pangkat-golongan-page/pangkat-golongan-page').then(
+            (m) => m.PangkatGolonganPage,
+          ),
+      },
+      {
+        path: 'akses-ditolak',
+        title: 'Akses ditolak · Admin Kepegawaian',
+        loadComponent: () =>
+          import('./features/forbidden/forbidden-page').then((m) => m.ForbiddenPage),
       },
     ],
   },

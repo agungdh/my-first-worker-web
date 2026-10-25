@@ -1,0 +1,168 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Ubah data pegawai' : 'Tambah pegawai' }}</h2>
+
+<form (submit)="save($event)" novalidate>
+  <mat-dialog-content class="dialog-content">
+    @if (errorMessage(); as message) {
+      <div class="alert alert-error" role="alert">
+        <mat-icon>error</mat-icon>
+        <span>{{ message }}</span>
+      </div>
+    }
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>NIP</mat-label>
+        <input
+          matInput
+          inputmode="numeric"
+          [formField]="form.nip"
+          autocomplete="off"
+          placeholder="198001012000011001"
+        />
+        <mat-hint>8-20 digit angka, dipakai untuk login.</mat-hint>
+        @for (error of form.nip().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nama</mat-label>
+        <input matInput [formField]="form.nama" autocomplete="off" placeholder="Nama lengkap" />
+        @for (error of form.nama().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Role</mat-label>
+        <select matNativeControl [formField]="form.role">
+          @for (option of roleOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @for (error of form.role().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <select matNativeControl [formField]="form.status">
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @for (error of form.status().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Bidang</mat-label>
+        <select matNativeControl [formField]="form.bidang_id">
+          <option value="" disabled>Pilih bidang</option>
+          @for (option of data.bidangOptions; track option.id) {
+            <option [value]="option.id">{{ option.bidang }}</option>
+          }
+        </select>
+        @for (error of form.bidang_id().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Pangkat &amp; golongan</mat-label>
+        <select matNativeControl [formField]="form.pangkat_golongan_id">
+          <option value="">— Tidak ada —</option>
+          @for (option of data.pangkatOptions; track option.id) {
+            <option [value]="option.id">
+              {{ option.pangkat }} ({{ option.golongan }}/{{ option.ruang }})
+            </option>
+          }
+        </select>
+        @for (error of form.pangkat_golongan_id().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Jabatan</mat-label>
+        <input matInput [formField]="form.jabatan" autocomplete="off" placeholder="Opsional" />
+        @for (error of form.jabatan().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Peran</mat-label>
+        <input matInput [formField]="form.peran" autocomplete="off" placeholder="Opsional" />
+        @for (error of form.peran().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Kategori jabatan</mat-label>
+        <select matNativeControl [formField]="form.kategori_jabatan">
+          <option value="">— Tidak ada —</option>
+          @for (option of kategoriJabatanOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @for (error of form.kategori_jabatan().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Kebutuhan jam pelatihan</mat-label>
+        <select matNativeControl [formField]="form.kategori_kebutuhan_jam_pelatihan">
+          <option value="">— Tidak ada —</option>
+          @for (option of kategoriKebutuhanOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @for (error of form.kategori_kebutuhan_jam_pelatihan().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [type]="showPassword() ? 'text' : 'password'"
+          [formField]="form.password"
+          autocomplete="new-password"
+          placeholder="Kosongkan untuk menggunakan NIP"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Sembunyikan password' : 'Tampilkan password'"
+        >
+          <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>
+          @if (isEdit) {
+            Kosongkan bila password tidak ingin diubah.
+          } @else {
+            Kosongkan untuk memakai NIP sebagai password awal.
+          }
+        </mat-hint>
+        @for (error of form.password().errors(); track error.kind) {
+          <mat-error>{{ error.message }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close [disabled]="saving()">Batal</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Menyimpan…' : 'Simpan' }}
+    </button>
+  </mat-dialog-actions>
+</form>
